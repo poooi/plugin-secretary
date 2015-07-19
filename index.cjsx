@@ -36,8 +36,8 @@ module.exports =
   version: '0.1.2'
   reactClass: React.createClass
     getInitialState: ->
-      secretary: config.get('plugin.secretary.ship')
-      ships: []   # Contains ship id < 500 only.
+      secretary: config.get('plugin.secretary.ship', 0)
+      ships: []
       shipgraph: []
     componentDidMount: ->
       window.addEventListener 'game.response', @handleResponse
@@ -60,7 +60,7 @@ module.exports =
             ships: ships
             shipgraph: shipgraph
         when '/kcsapi/api_port/port', '/kcsapi/api_get_member/deck', '/kcsapi/api_req_hensei/change'
-          if @state.secretary == null
+          if @state.secretary == 0
             @updateNotifyConfig(@state.secretary)
 
     ###*
@@ -68,11 +68,11 @@ module.exports =
      * @param {number} ship id in window.$ships
      ###
     updateNotifyConfig: (ship_id) ->
-      server = SERVERS[Math.floor(Math.random() * SERVERS.length)];
+      server = SERVERS[Math.floor(Math.random() * SERVERS.length)]
       return unless server
 
-      # ship_id null represents using flagship from fleet 1
-      if not ship_id
+      # ship_id 0 represents using flagship from fleet 1
+      if ship_id == 0
         {_decks, _ships} = window
         ship = _decks[0]?.api_ship[0]
         if ship and ship > 0
@@ -90,12 +90,12 @@ module.exports =
       # config.set('poi.notify.morale.audio', audio_morale)
 
     handleShipChange: (e) ->
-      if e && e.target.value != @state.secretary
-        ship = e.target.value
-        @setState
-          secretary: ship
-        config.set('plugin.secretary.ship', ship)
-        @updateNotifyConfig(ship)
+      ship = parseInt(e.target.value)
+      return unless ship != NaN
+      @setState
+        secretary: ship
+      config.set('plugin.secretary.ship', ship)
+      @updateNotifyConfig(ship)
 
     handleAudition: (type) ->
       audio = null
@@ -120,7 +120,7 @@ module.exports =
         <Grid>
           <Col xs=12>
             <Input type="select" value={@state.secretary} onChange={@handleShipChange}>
-              <option key={0} value={null}>当前秘书舰</option>
+              <option key={0} value={0}>当前秘书舰</option>
               {
                 for ship, i in @state.ships
                   continue unless ship?
