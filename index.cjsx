@@ -36,7 +36,8 @@ module.exports =
   version: '0.1.2'
   reactClass: React.createClass
     getInitialState: ->
-      secretary: config.get('plugin.secretary.ship', 0)
+      notifySecretary: config.get('plugin.secretary.ship', 0)
+      fleetSecretary: null
       ships: []
       shipgraph: []
     componentDidMount: ->
@@ -60,8 +61,14 @@ module.exports =
             ships: ships
             shipgraph: shipgraph
         when '/kcsapi/api_port/port', '/kcsapi/api_get_member/deck', '/kcsapi/api_req_hensei/change'
-          if @state.secretary == 0
-            @updateNotifyConfig(@state.secretary)
+          {_decks, _ships} = window
+          ship = _decks[0]?.api_ship[0]
+          if ship and ship > 0
+            secretary = _ships[ship].api_ship_id
+            @setState
+              fleetSecretary: secretary
+            if @state.notifySecretary == 0
+              @updateNotifyConfig(secretary)
 
     ###*
      * Update notification config using audio of ship
@@ -70,14 +77,6 @@ module.exports =
     updateNotifyConfig: (ship_id) ->
       server = SERVERS[Math.floor(Math.random() * SERVERS.length)]
       return unless server
-
-      # ship_id 0 represents using flagship from fleet 1
-      if ship_id == 0
-        {_decks, _ships} = window
-        ship = _decks[0]?.api_ship[0]
-        if ship and ship > 0
-          ship_id = _ships[ship].api_ship_id
-
       filename = @state.shipgraph[ship_id]?.api_filename
       return unless filename
       audio_constr = "http://#{server}/kcs/sound/kc#{filename}/5.mp3"
@@ -90,12 +89,14 @@ module.exports =
       # config.set('poi.notify.morale.audio', audio_morale)
 
     handleShipChange: (e) ->
-      ship = parseInt(e.target.value)
-      return unless ship != NaN
+      ship_id = parseInt(e.target.value)
+      return unless ship_id != NaN
       @setState
-        secretary: ship
-      config.set('plugin.secretary.ship', ship)
-      @updateNotifyConfig(ship)
+        notifySecretary: ship_id
+      if ship_id
+        @updateNotifyConfig(ship_id)
+      else
+        @updateNotifyConfig(@state.fleetSecretary)
 
     handleAudition: (type) ->
       audio = null
@@ -114,12 +115,12 @@ module.exports =
       <div>
         <link rel="stylesheet" href={join(relative(ROOT, __dirname), 'assets', 'secretary.css')} />
         <div className="divider">
-          <h5>秘书舰</h5>
+          <h5>通知秘书</h5>
           <hr />
         </div>
         <Grid>
           <Col xs=12>
-            <Input type="select" value={@state.secretary} onChange={@handleShipChange}>
+            <Input type="select" value={@state.notifySecretary} onChange={@handleShipChange}>
               <option key={0} value={0}>当前秘书舰</option>
               {
                 for ship, i in @state.ships
@@ -128,9 +129,12 @@ module.exports =
               }
             </Input>
           </Col>
+          <Col xs=12>
+            <p>当前秘书舰：{ if @state.fleetSecretary then window.$ships[@state.fleetSecretary]?.api_name else "未知" }</p>
+          </Col>
         </Grid>
         <div className="divider">
-          <h5>试听</h5>
+          <h5>通知试听</h5>
           <hr />
         </div>
         <Grid>
