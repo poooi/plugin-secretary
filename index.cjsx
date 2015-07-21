@@ -91,8 +91,11 @@ module.exports =
     handleShipChange: (e) ->
       ship_id = parseInt(e.target.value)
       return unless ship_id != NaN
+      # Save secretary config
       @setState
         notifySecretary: ship_id
+      config.set('plugin.secretary.ship', ship_id)
+      # Update secretary voice
       if ship_id
         @updateNotifyConfig(ship_id)
       else
