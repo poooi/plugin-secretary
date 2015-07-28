@@ -25,6 +25,14 @@ SERVERS = [
   '203.104.209.102'
 ]
 
+zerofill = (n) ->
+  pad = "000"
+  n = n.toString()
+  if n.length < pad.length
+    return (pad+n).slice(-pad.length)
+  else
+    return n
+
 module.exports =
   name: 'secretary'
   displayName: [<FontAwesome name='file-audio-o' key={0} />, ' 秘书通知']
@@ -50,13 +58,14 @@ module.exports =
       switch path
         when '/kcsapi/api_start2'
           # Ships array like window.$ships.
-          # Contains ship id < 500, sorted by sortno.
+          # Contains ship can be owned by player only, sorted by sortno.
           ships = []
           for ship in body.api_mst_ship
-            if ship.api_id < 500
-              ships[ship.api_sortno] = ship
+            continue unless ship?.api_sortno
+            ships[ship.api_sortno] = ship
           shipgraph = []
-          shipgraph[ship.api_id] = ship for ship in body.api_mst_shipgraph
+          for ship in body.api_mst_shipgraph
+            shipgraph[ship.api_id] = ship 
           @setState
             ships: ships
             shipgraph: shipgraph
@@ -127,8 +136,8 @@ module.exports =
               <option key={0} value={0}>当前秘书舰</option>
               {
                 for ship, i in @state.ships
-                  continue unless ship?
-                  <option key={i + 1} value={ship.api_id}>No.{ship.api_sortno} {ship.api_name}</option>
+                  continue unless ship?.api_sortno
+                  <option key={i} value={ship.api_id}>No.{zerofill(ship.api_sortno)} {ship.api_name}</option>
               }
             </Input>
           </Col>
