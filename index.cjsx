@@ -42,7 +42,7 @@ module.exports =
   link: 'https://github.com/dazzyd'
   show: true
   priority: 8
-  version: '0.1.2'
+  version: '0.2.0'
   reactClass: React.createClass
     getInitialState: ->
       notifySecretary: config.get('plugin.secretary.ship', 0)
