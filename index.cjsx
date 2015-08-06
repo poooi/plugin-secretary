@@ -24,6 +24,7 @@ SERVERS = [
   '203.104.209.55',
   '203.104.209.102'
 ]
+NONCE = Math.floor(Math.random() * SERVERS.length)
 
 zerofill = (n) ->
   pad = "000"
@@ -84,9 +85,10 @@ module.exports =
      * @param {number} ship id in window.$ships
      ###
     updateNotifyConfig: (ship_id) ->
-      server = SERVERS[Math.floor(Math.random() * SERVERS.length)]
-      return unless server
+      return unless ship_id > 0
+      server = SERVERS[(ship_id + NONCE) % SERVERS.length]
       filename = @state.shipgraph[ship_id]?.api_filename
+      return unless server
       return unless filename
       audio_constr = "http://#{server}/kcs/sound/kc#{filename}/5.mp3"
       audio_expedi = "http://#{server}/kcs/sound/kc#{filename}/7.mp3"
