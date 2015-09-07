@@ -45,6 +45,7 @@ module.exports =
   version: '0.2.0'
   reactClass: React.createClass
     getInitialState: ->
+      isLogin: false
       notifySecretary: config.get('plugin.secretary.ship', 0)
       fleetSecretary: null
       ships: []
@@ -68,6 +69,7 @@ module.exports =
           for ship in body.api_mst_shipgraph
             shipgraph[ship.api_id] = ship 
           @setState
+            isLogin: true
             ships: ships
             shipgraph: shipgraph
         when '/kcsapi/api_port/port', '/kcsapi/api_get_member/deck', '/kcsapi/api_req_hensei/change'
@@ -113,17 +115,16 @@ module.exports =
         @updateNotifyConfig(@state.fleetSecretary)
 
     handleAudition: (type) ->
-      audio = null
       switch type
         when 'construction'
-          audio = config.get('poi.notify.construction.audio')
+          notify "Notification sound audition",
+            type: 'construction'
         when 'expedition'
-          audio = config.get('poi.notify.expedition.audio')
+          notify "Notification sound audition",
+            type: 'expedition'
         when 'repair'
-          audio = config.get('poi.notify.repair.audio')
-      if audio
-        sound = new Audio(audio)
-        sound.play()
+          notify "Notification sound audition",
+            type: 'repair'
 
     render: ->
       <div>
@@ -134,14 +135,21 @@ module.exports =
         </div>
         <Grid>
           <Col xs=12>
-            <Input type="select" value={@state.notifySecretary} onChange={@handleShipChange}>
-              <option key={0} value={0}>当前秘书舰</option>
-              {
-                for ship, i in @state.ships
-                  continue unless ship?.api_sortno
-                  <option key={i} value={ship.api_id}>No.{zerofill(ship.api_sortno)} {ship.api_name}</option>
-              }
-            </Input>
+          {
+            if @state.isLogin
+              options = []
+              options.push <option key={0} value={0}>当前秘书舰</option>
+              for ship, i in @state.ships
+                continue unless ship?.api_sortno
+                options.push <option key={i} value={ship.api_id}>No.{zerofill(ship.api_sortno)} {ship.api_name}</option>
+              <Input type="select" value={@state.notifySecretary} onChange={@handleShipChange}>
+                {options}
+              </Input> 
+            else
+              <Input type="select" value={0} disabled>
+                <option key={0} value={0}>请进入游戏</option>
+              </Input> 
+          }
           </Col>
           <Col xs=12>
             <p>当前秘书舰：{ if @state.fleetSecretary then window.$ships[@state.fleetSecretary]?.api_name else "未知" }</p>
