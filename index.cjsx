@@ -130,7 +130,6 @@ module.exports =
     handleRefresh: () ->
       # Reset server nonce
       SERVER_NONCE = Math.floor(Math.random() * SERVERS.length)
-      console.log(SERVER_NONCE)
       # Update notify config
       if @state.notifySecretary > 0
         @updateNotifyConfig(@state.notifySecretary)
