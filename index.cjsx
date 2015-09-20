@@ -24,7 +24,7 @@ SERVERS = [
   '203.104.209.55',
   '203.104.209.102'
 ]
-NONCE = Math.floor(Math.random() * SERVERS.length)
+SERVER_NONCE = Math.floor(Math.random() * SERVERS.length)
 
 zerofill = (n) ->
   pad = "000"
@@ -39,15 +39,16 @@ module.exports =
   displayName: [<FontAwesome name='file-audio-o' key={0} />, ' 秘书通知']
   description: '秘书舰通知语音'
   author: 'Dazzy Ding'
-  link: 'https://github.com/dazzyd'
+  link: 'https://github.com/yukixz'
   show: true
   priority: 8
-  version: '0.2.0'
+  version: '0.2.1'
   reactClass: React.createClass
     getInitialState: ->
       isLogin: false
       notifySecretary: config.get('plugin.secretary.ship', 0)
       fleetSecretary: null
+      # Game data
       ships: []
       shipgraph: []
     componentDidMount: ->
@@ -88,7 +89,7 @@ module.exports =
      ###
     updateNotifyConfig: (ship_id) ->
       return unless ship_id > 0
-      server = SERVERS[(ship_id + NONCE) % SERVERS.length]
+      server = SERVERS[(ship_id + SERVER_NONCE) % SERVERS.length]
       filename = @state.shipgraph[ship_id]?.api_filename
       return unless server
       return unless filename
@@ -103,13 +104,13 @@ module.exports =
 
     handleShipChange: (e) ->
       ship_id = parseInt(e.target.value)
-      return unless ship_id != NaN
+      return if ship_id is NaN
       # Save secretary config
       @setState
         notifySecretary: ship_id
       config.set('plugin.secretary.ship', ship_id)
-      # Update secretary voice
-      if ship_id
+      # Update notify config
+      if ship_id > 0
         @updateNotifyConfig(ship_id)
       else
         @updateNotifyConfig(@state.fleetSecretary)
@@ -117,18 +118,29 @@ module.exports =
     handleAudition: (type) ->
       switch type
         when 'construction'
-          notify "Notification sound audition",
+          notify "Construction notification",
             type: 'construction'
         when 'expedition'
-          notify "Notification sound audition",
+          notify "Expedition notification",
             type: 'expedition'
         when 'repair'
-          notify "Notification sound audition",
+          notify "Repair notification",
             type: 'repair'
+
+    handleRefresh: () ->
+      # Reset server nonce
+      SERVER_NONCE = Math.floor(Math.random() * SERVERS.length)
+      console.log(SERVER_NONCE)
+      # Update notify config
+      if @state.notifySecretary > 0
+        @updateNotifyConfig(@state.notifySecretary)
+      else
+        @updateNotifyConfig(@state.fleetSecretary)
 
     render: ->
       <div>
         <link rel="stylesheet" href={join(relative(ROOT, __dirname), 'assets', 'secretary.css')} />
+
         <div className="divider">
           <h5>通知秘书</h5>
           <hr />
@@ -155,19 +167,36 @@ module.exports =
             <p>当前秘书舰：{ if @state.fleetSecretary then window.$ships[@state.fleetSecretary]?.api_name else "未知" }</p>
           </Col>
         </Grid>
+
         <div className="divider">
-          <h5>通知试听</h5>
+          <h5>通知测试</h5>
           <hr />
         </div>
         <Grid>
           <Col xs=4>
-            <Button bsStyle='danger' style={width: '100%'} onClick={@handleAudition.bind(this, 'construction')}>建造</Button>
+            <Button bsStyle='danger' style={width: '100%'}
+              onClick={@handleAudition.bind(this, 'construction')}>建造</Button>
           </Col>
           <Col xs=4>
-            <Button bsStyle='warning' style={width: '100%'} onClick={@handleAudition.bind(this, 'repair')}>入渠</Button>
+            <Button bsStyle='warning' style={width: '100%'}
+              onClick={@handleAudition.bind(this, 'repair')}>入渠</Button>
           </Col>
           <Col xs=4>
-            <Button bsStyle='info' style={width: '100%'} onClick={@handleAudition.bind(this, 'expedition')}>远征</Button>
+            <Button bsStyle='info' style={width: '100%'}
+              onClick={@handleAudition.bind(this, 'expedition')}>远征</Button>
           </Col>
         </Grid>
+
+        <div className="divider">
+          <h5>高级选项</h5>
+          <hr />
+        </div>
+        <Grid>
+          <Col xs=6>
+            <Button bsStyle='warning' style={width: '100%'} onClick={@handleRefresh}>
+              重新设置通知声音
+            </Button>
+          </Col>
+        </Grid>
+
       </div>
