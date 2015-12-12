@@ -1,7 +1,16 @@
 {$, _, $$, React, ReactBootstrap, FontAwesome, ROOT} = window
 {Grid, Col, Input, Button} = ReactBootstrap
 {relative, join} = require 'path-extra'
-
+i18n = require 'i18n'
+{__} = i18n
+i18n.configure
+  locales:['en-US', 'ja-JP', 'zh-CN', 'zh-TW'],
+  defaultLocale: 'zh-CN',
+  directory: join(__dirname, 'i18n'),
+  updateFiles: false,
+  indent: "\t",
+  extension: '.json'
+i18n.setLocale(window.language)
 SERVERS = [
   '203.104.209.71',
   '125.6.184.15',
@@ -36,8 +45,8 @@ zerofill = (n) ->
 
 module.exports =
   name: 'secretary'
-  displayName: [<FontAwesome name='file-audio-o' key={0} />, ' 秘书通知']
-  description: '秘书舰通知语音'
+  displayName: [<FontAwesome name='file-audio-o' key={0} />, " #{__ 'Secretary'}"]
+  description: __ 'Use secretary voice as notification sound.'
   author: 'Dazzy Ding'
   link: 'https://github.com/yukixz'
   show: true
@@ -68,7 +77,7 @@ module.exports =
             ships[ship.api_sortno] = ship
           shipgraph = []
           for ship in body.api_mst_shipgraph
-            shipgraph[ship.api_id] = ship 
+            shipgraph[ship.api_id] = ship
           @setState
             isLogin: true
             ships: ships
@@ -96,11 +105,11 @@ module.exports =
       audio_constr = "http://#{server}/kcs/sound/kc#{filename}/5.mp3"
       audio_expedi = "http://#{server}/kcs/sound/kc#{filename}/7.mp3"
       audio_repair = "http://#{server}/kcs/sound/kc#{filename}/6.mp3"
-      # audio_morale = ""   # Which audio should we use?
+      audio_morale = "http://#{server}/kcs/sound/kc#{filename}/27.mp3"
       config.set('poi.notify.construction.audio', audio_constr)
       config.set('poi.notify.expedition.audio', audio_expedi)
       config.set('poi.notify.repair.audio', audio_repair)
-      # config.set('poi.notify.morale.audio', audio_morale)
+      config.set('poi.notify.morale.audio', audio_morale)
 
     handleShipChange: (e) ->
       ship_id = parseInt(e.target.value)
@@ -126,6 +135,9 @@ module.exports =
         when 'repair'
           notify "Repair notification",
             type: 'repair'
+        when 'morale'
+          notify "Morale notification",
+            type: 'morale'
 
     handleRefresh: () ->
       # Reset server nonce
@@ -141,7 +153,7 @@ module.exports =
         <link rel="stylesheet" href={join(relative(ROOT, __dirname), 'assets', 'secretary.css')} />
 
         <div className="divider">
-          <h5>通知秘书</h5>
+          <h5>{__ 'Notification sound'}</h5>
           <hr />
         </div>
         <Grid>
@@ -149,51 +161,55 @@ module.exports =
           {
             if @state.isLogin
               options = []
-              options.push <option key={0} value={0}>当前秘书舰</option>
+              options.push(
+                <option key={0} value={0}>
+                  {__ 'Current secretary'}: { if @state.fleetSecretary then window.$ships[@state.fleetSecretary]?.api_name else __ 'Unknown' }
+                </option>
+              )
               for ship, i in @state.ships
                 continue unless ship?.api_sortno
                 options.push <option key={i} value={ship.api_id}>No.{zerofill(ship.api_sortno)} {ship.api_name}</option>
               <Input type="select" value={@state.notifySecretary} onChange={@handleShipChange}>
                 {options}
-              </Input> 
+              </Input>
             else
               <Input type="select" value={0} disabled>
-                <option key={0} value={0}>请进入游戏</option>
-              </Input> 
+                <option key={0} value={0}>{__ 'Not logged in'}</option>
+              </Input>
           }
-          </Col>
-          <Col xs=12>
-            <p>当前秘书舰：{ if @state.fleetSecretary then window.$ships[@state.fleetSecretary]?.api_name else "未知" }</p>
           </Col>
         </Grid>
 
         <div className="divider">
-          <h5>通知测试</h5>
+          <h5>{__ 'Test'}</h5>
           <hr />
         </div>
         <Grid>
-          <Col xs=4>
-            <Button bsStyle='danger' style={width: '100%'}
-              onClick={@handleAudition.bind(this, 'construction')}>建造</Button>
+          <Col xs=3>
+            <Button style={width: '100%'}
+              onClick={@handleAudition.bind(this, 'construction')}>{__ 'Construction'}</Button>
           </Col>
-          <Col xs=4>
-            <Button bsStyle='warning' style={width: '100%'}
-              onClick={@handleAudition.bind(this, 'repair')}>入渠</Button>
+          <Col xs=3>
+            <Button style={width: '100%'}
+              onClick={@handleAudition.bind(this, 'repair')}>{__ 'Docking'}</Button>
           </Col>
-          <Col xs=4>
-            <Button bsStyle='info' style={width: '100%'}
-              onClick={@handleAudition.bind(this, 'expedition')}>远征</Button>
+          <Col xs=3>
+            <Button style={width: '100%'}
+              onClick={@handleAudition.bind(this, 'expedition')}>{__ 'Expedition'}</Button>
+          </Col>
+          <Col xs=3>
+            <Button style={width: '100%'}
+              onClick={@handleAudition.bind(this, 'morale')}>{__ 'Morale'}</Button>
           </Col>
         </Grid>
-
         <div className="divider">
-          <h5>高级选项</h5>
+          <h5>{__ 'Advanced'}</h5>
           <hr />
         </div>
         <Grid>
           <Col xs=6>
             <Button bsStyle='warning' style={width: '100%'} onClick={@handleRefresh}>
-              重新设置通知声音
+              {__ 'Reset'}
             </Button>
           </Col>
         </Grid>

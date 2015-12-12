@@ -1,0 +1,15 @@
+{
+  "Reset": "リセット",
+  "Advanced": "高度な設定",
+  "Construction": "建造",
+  "Expedition": "遠征",
+  "Morale": "疲労回復",
+  "Docking": "入渠",
+  "Not logged in": "ログインしていません",
+  "Notification sound": "通知音",
+  "Current secretary": "現在の秘書艦",
+  "Unknown": "不明",
+  "Secretary": "秘書艦ボイス",
+  "Test": "テスト",
+  "Use secretary voice as notification sound.": "秘書艦のボイスが通知音を設定します"
+}

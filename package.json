@@ -17,5 +17,6 @@
   },
   "homepage": "https://github.com/poooi/plugin-secretary",
   "dependencies": {
+    "i18n": "^0.5.0"
   }
 }
