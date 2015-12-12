@@ -1,16 +1,19 @@
 {$, _, $$, React, ReactBootstrap, FontAwesome, ROOT} = window
-{Grid, Col, Input, Button} = ReactBootstrap
+{Grid, Col, Input, Button, ButtonGroup} = ReactBootstrap
 {relative, join} = require 'path-extra'
+
 i18n = require 'i18n'
 {__} = i18n
 i18n.configure
-  locales:['en-US', 'ja-JP', 'zh-CN', 'zh-TW'],
+  locales: ['en-US', 'ja-JP', 'zh-CN', 'zh-TW'],
   defaultLocale: 'zh-CN',
   directory: join(__dirname, 'i18n'),
   updateFiles: false,
   indent: "\t",
   extension: '.json'
 i18n.setLocale(window.language)
+
+
 SERVERS = [
   '203.104.209.71',
   '125.6.184.15',
@@ -185,21 +188,17 @@ module.exports =
           <hr />
         </div>
         <Grid>
-          <Col xs=3>
-            <Button style={width: '100%'}
-              onClick={@handleAudition.bind(this, 'construction')}>{__ 'Construction'}</Button>
-          </Col>
-          <Col xs=3>
-            <Button style={width: '100%'}
-              onClick={@handleAudition.bind(this, 'repair')}>{__ 'Docking'}</Button>
-          </Col>
-          <Col xs=3>
-            <Button style={width: '100%'}
-              onClick={@handleAudition.bind(this, 'expedition')}>{__ 'Expedition'}</Button>
-          </Col>
-          <Col xs=3>
-            <Button style={width: '100%'}
-              onClick={@handleAudition.bind(this, 'morale')}>{__ 'Morale'}</Button>
+          <Col xs={12}>
+            <ButtonGroup style={display: 'flex'}>
+              <Button bsStyle={'success'} style={flex: '1'}
+                onClick={@handleAudition.bind(this, 'construction')}>{__ 'Construction'}</Button>
+              <Button bsStyle={'success'} style={flex: '1'}
+                onClick={@handleAudition.bind(this, 'repair')}>{__ 'Docking'}</Button>
+              <Button bsStyle={'success'} style={flex: '1'}
+                onClick={@handleAudition.bind(this, 'expedition')}>{__ 'Expedition'}</Button>
+              <Button bsStyle={'success'} style={flex: '1'}
+                onClick={@handleAudition.bind(this, 'morale')}>{__ 'Morale'}</Button>
+            </ButtonGroup>
           </Col>
         </Grid>
         <div className="divider">
