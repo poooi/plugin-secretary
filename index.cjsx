@@ -1,19 +1,15 @@
 {$, _, $$, React, ReactBootstrap, FontAwesome, ROOT} = window
 {Grid, Col, Input, Button, ButtonGroup} = ReactBootstrap
 {relative, join} = require 'path-extra'
-
-i18n = require 'i18n'
-{__} = i18n
-i18n.configure
+window.i18n.secretary = new(require 'i18n-2')
   locales: ['en-US', 'ja-JP', 'zh-CN', 'zh-TW'],
   defaultLocale: 'zh-CN',
   directory: join(__dirname, 'i18n'),
   updateFiles: false,
   indent: "\t",
   extension: '.json'
-i18n.setLocale(window.language)
-
-
+window.i18n.secretary.setLocale(window.language)
+__ = window.i18n.secretary.__.bind(window.i18n.secretary)
 SERVERS = [
   '203.104.209.71',
   '125.6.184.15',
@@ -166,12 +162,12 @@ module.exports =
               options = []
               options.push(
                 <option key={0} value={0}>
-                  {__ 'Current secretary'}: { if @state.fleetSecretary then window.$ships[@state.fleetSecretary]?.api_name else __ 'Unknown' }
+                  {__ 'Current secretary'}: { if @state.fleetSecretary && window.$ships[@state.fleetSecretary]? then window.i18n.resources.__ window.$ships[@state.fleetSecretary].api_name else __ 'Unknown' }
                 </option>
               )
               for ship, i in @state.ships
                 continue unless ship?.api_sortno
-                options.push <option key={i} value={ship.api_id}>No.{zerofill(ship.api_sortno)} {ship.api_name}</option>
+                options.push <option key={i} value={ship.api_id}>No.{zerofill(ship.api_sortno)} {window.i18n.resources.__ ship.api_name}</option>
               <Input type="select" value={@state.notifySecretary} onChange={@handleShipChange}>
                 {options}
               </Input>
