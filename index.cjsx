@@ -1,6 +1,8 @@
 {$, _, $$, React, ReactBootstrap, FontAwesome, ROOT} = window
 {Grid, Col, Input, Button, ButtonGroup} = ReactBootstrap
 {relative, join} = require 'path-extra'
+
+# i18n
 window.i18n.secretary = new(require 'i18n-2')
   locales: ['en-US', 'ja-JP', 'zh-CN', 'zh-TW'],
   defaultLocale: 'zh-CN',
@@ -10,6 +12,8 @@ window.i18n.secretary = new(require 'i18n-2')
   extension: '.json'
 window.i18n.secretary.setLocale(window.language)
 __ = window.i18n.secretary.__.bind(window.i18n.secretary)
+
+# constant
 SERVERS = [
   '203.104.209.71',
   '125.6.184.15',
