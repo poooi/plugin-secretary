@@ -13,6 +13,10 @@ window.i18n.secretary = new(require 'i18n-2')
 window.i18n.secretary.setLocale(window.language)
 __ = window.i18n.secretary.__.bind(window.i18n.secretary)
 
+if not config.get('plugin.secretary.enable', false)
+  for s in ['construction','repair','expedition','morale']
+    config.set("poi.notify.#{s}.audio")
+
 # constant
 SERVERS = [
   '203.104.209.71',
