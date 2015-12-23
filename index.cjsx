@@ -54,7 +54,7 @@ module.exports =
   link: 'https://github.com/yukixz'
   show: true
   priority: 8
-  version: '0.3.0'
+  version: '0.0.0'  # See package.json
   reactClass: React.createClass
     getInitialState: ->
       isLogin: false
