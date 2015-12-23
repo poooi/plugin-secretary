@@ -11,5 +11,6 @@
   "Unknown": "未知",
   "Secretary": "祕書通知",
   "Test": "測試",
-  "Use secretary voice as notification sound.": "將祕書艦語音設置爲通知語音"
+  "Use secretary voice as notification sound.": "將祕書艦語音設置爲通知語音",
+  "Disable the plugin to return to default poi notification": "回到默認 poi 通知語音，請在設置-擴展程序中將本插件禁用"
 }

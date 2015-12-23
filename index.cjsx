@@ -216,5 +216,9 @@ module.exports =
             </Button>
           </Col>
         </Grid>
+        <div className="divider">
+          <hr />
+          <p class='bg-info'>{__ 'Disable the plugin to return to default poi notification'}</p>
+        </div>
 
       </div>
