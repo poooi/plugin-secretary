@@ -8,7 +8,6 @@ window.i18n.secretary = new(require 'i18n-2')
   defaultLocale: 'zh-CN',
   directory: join(__dirname, 'i18n'),
   updateFiles: false,
-  indent: "\t",
   extension: '.json'
 window.i18n.secretary.setLocale(window.language)
 __ = window.i18n.secretary.__.bind(window.i18n.secretary)
@@ -97,22 +96,25 @@ module.exports =
 
     ###*
      * Update notification config using audio of ship
-     * @param {number} ship id in window.$ships
+     * @param {number} ship id in window.$ships or default audio if equals -1
      ###
     updateNotifyConfig: (ship_id) ->
-      return unless ship_id > 0
-      server = SERVERS[(ship_id + SERVER_NONCE) % SERVERS.length]
-      filename = @state.shipgraph[ship_id]?.api_filename
-      return unless server
-      return unless filename
-      audio_constr = "http://#{server}/kcs/sound/kc#{filename}/5.mp3"
-      audio_expedi = "http://#{server}/kcs/sound/kc#{filename}/7.mp3"
-      audio_repair = "http://#{server}/kcs/sound/kc#{filename}/6.mp3"
-      audio_morale = "http://#{server}/kcs/sound/kc#{filename}/27.mp3"
-      config.set('poi.notify.construction.audio', audio_constr)
-      config.set('poi.notify.expedition.audio', audio_expedi)
-      config.set('poi.notify.repair.audio', audio_repair)
-      config.set('poi.notify.morale.audio', audio_morale)
+      if ship_id == -1
+        for s in ['construction','repair','expedition','morale']
+          config.set("poi.notify.#{s}.audio")
+      if ship_id > 0
+        server = SERVERS[(ship_id + SERVER_NONCE) % SERVERS.length]
+        filename = @state.shipgraph[ship_id]?.api_filename
+        return unless server
+        return unless filename
+        audio_constr = "http://#{server}/kcs/sound/kc#{filename}/5.mp3"
+        audio_expedi = "http://#{server}/kcs/sound/kc#{filename}/7.mp3"
+        audio_repair = "http://#{server}/kcs/sound/kc#{filename}/6.mp3"
+        audio_morale = "http://#{server}/kcs/sound/kc#{filename}/27.mp3"
+        config.set('poi.notify.construction.audio', audio_constr)
+        config.set('poi.notify.expedition.audio', audio_expedi)
+        config.set('poi.notify.repair.audio', audio_repair)
+        config.set('poi.notify.morale.audio', audio_morale)
 
     handleShipChange: (e) ->
       ship_id = parseInt(e.target.value)
@@ -122,10 +124,10 @@ module.exports =
         notifySecretary: ship_id
       config.set('plugin.secretary.ship', ship_id)
       # Update notify config
-      if ship_id > 0
-        @updateNotifyConfig(ship_id)
-      else
+      if ship_id == 0
         @updateNotifyConfig(@state.fleetSecretary)
+      else
+        @updateNotifyConfig(ship_id)
 
     handleAudition: (type) ->
       switch type
@@ -146,10 +148,10 @@ module.exports =
       # Reset server nonce
       SERVER_NONCE = Math.floor(Math.random() * SERVERS.length)
       # Update notify config
-      if @state.notifySecretary > 0
-        @updateNotifyConfig(@state.notifySecretary)
-      else
+      if @state.notifySecretary == 0
         @updateNotifyConfig(@state.fleetSecretary)
+      else
+        @updateNotifyConfig(@state.notifySecretary)
 
     render: ->
       <div>
@@ -164,6 +166,11 @@ module.exports =
           {
             if @state.isLogin
               options = []
+              options.push(
+                <option key={-1} value={-1}>
+                  {__ 'Default poi: Reset to default audio poi'}
+                </option>
+              )
               options.push(
                 <option key={0} value={0}>
                   {__ 'Current secretary'}: { if @state.fleetSecretary && window.$ships[@state.fleetSecretary]? then window.i18n.resources.__ window.$ships[@state.fleetSecretary].api_name else __ 'Unknown' }
