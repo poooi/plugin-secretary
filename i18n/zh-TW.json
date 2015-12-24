@@ -11,5 +11,6 @@
   "Unknown": "未知",
   "Secretary": "祕書通知",
   "Test": "測試",
-  "Use secretary voice as notification sound.": "將祕書艦語音設置爲通知語音"
+  "Use secretary voice as notification sound.": "將祕書艦語音設置爲通知語音",
+  "Default poi: Reset to default audio poi": "默認語音 poi: 恢復默認語音 poi"
 }
