@@ -1,5 +1,5 @@
 {$, _, $$, React, ReactBootstrap, FontAwesome, ROOT} = window
-{Grid, Col, Input, Button, ButtonGroup} = ReactBootstrap
+{Grid, Col, Input, Button, ButtonGroup, OverlayTrigger, Tooltip} = ReactBootstrap
 {relative, join} = require 'path-extra'
 
 # i18n
@@ -73,8 +73,7 @@ module.exports =
       {method, path, body, postBody} = e.detail
       switch path
         when '/kcsapi/api_start2'
-          # Ships array like window.$ships.
-          # Contains ship can be owned by player only, sorted by sortno.
+          # Ships can be owned by player only, sorted by sortno.
           ships = []
           for ship in body.api_mst_ship
             continue unless ship?.api_sortno
@@ -142,6 +141,7 @@ module.exports =
     handleDisable: ->
       for s in ['construction', 'repair', 'expedition', 'morale']
         config.set("poi.notify.#{s}.audio")
+      config.set('plugin.secretary.ship', -1)
       @setState
         notifySecretary: -1
 
@@ -176,7 +176,11 @@ module.exports =
               )
               for ship, i in @state.ships
                 continue unless ship?.api_sortno
-                options.push <option key={i} value={ship.api_id}>No.{zerofill(ship.api_sortno)} {window.i18n.resources.__ ship.api_name}</option>
+                options.push(
+                  <option key={i} value={ship.api_id}>
+                    No.{zerofill ship.api_sortno} {__r ship.api_name}
+                  </option>
+                )
               <Input type="select" value={@state.notifySecretary} onChange={@handleShipChange}>
                 {options}
               </Input>
@@ -212,9 +216,13 @@ module.exports =
         </div>
         <Grid>
           <Col xs=6>
-            <Button bsStyle='warning' style={width: '100%'} onClick={@handleDisable}>
-              {__ 'Disable'}
-            </Button>
+            <OverlayTrigger placement='top' overlay={
+                <Tooltip id="secretary-reset-note">{__ "Reset to default audio poi"}</Tooltip>
+              }>
+              <Button bsStyle='warning' style={width: '100%'} onClick={@handleDisable}>
+                {__ 'Disable'}
+              </Button>
+            </OverlayTrigger>
           </Col>
         </Grid>
 
