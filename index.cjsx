@@ -213,11 +213,6 @@ module.exports =
           <hr />
         </div>
         <Grid>
-          <Col xs=6>
-            <Button bsStyle='warning' style={width: '100%'} onClick={@handleRefresh}>
-              {__ 'Reset'}
-            </Button>
-          </Col>
         </Grid>
 
       </div>
