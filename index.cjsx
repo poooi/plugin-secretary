@@ -36,7 +36,6 @@ SERVERS = [
   '203.104.209.55',
   '203.104.209.102'
 ]
-SERVER_NONCE = Math.floor(Math.random() * SERVERS.length)
 
 zerofill = (n) ->
   pad = "000"
@@ -97,7 +96,8 @@ module.exports =
 
     updateNotifyConfig: (ship_id) ->
       return unless ship_id > 0
-      server = SERVERS[(ship_id + SERVER_NONCE) % SERVERS.length]
+      admiral_id = parseInt(window._nickNameId) || 0
+      server = SERVERS[(ship_id + admiral_id) % SERVERS.length]
       filename = @state.shipgraph[ship_id]?.api_filename
       return unless server
       return unless filename
