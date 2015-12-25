@@ -1,6 +1,7 @@
-{$, _, $$, React, ReactBootstrap, FontAwesome, ROOT} = window
-{Grid, Col, Input, Button, ButtonGroup, OverlayTrigger, Tooltip} = ReactBootstrap
+request = require 'request'
 {relative, join} = require 'path-extra'
+{$, _, $$, React, ReactBootstrap, FontAwesome, ROOT} = window
+{Alert, Button, ButtonGroup, Col, Grid, Input, OverlayTrigger, Tooltip} = ReactBootstrap
 
 # i18n
 window.i18n.secretary = new(require 'i18n-2')
@@ -45,6 +46,191 @@ zerofill = (n) ->
   else
     return n
 
+SecretaryArea = React.createClass
+  getInitialState: ->
+    # 0=fleet secretary, -1=disable, 1~*=$ships[]
+    notifySecretary: config.get('plugin.secretary.ship', 0)
+    fleetSecretary: null
+    # Game data
+    isLogin: false
+    ships: []
+    shipgraph: []
+  componentDidMount: ->
+    window.addEventListener 'game.response', @handleResponse
+  componentWillUnmount: ->
+    window.removeEventListener 'game.response', @handleResponse
+
+  handleResponse: (e) ->
+    {method, path, body, postBody} = e.detail
+    switch path
+      when '/kcsapi/api_start2'
+        # Ships can be owned by player only, sorted by sortno.
+        ships = []
+        for ship in body.api_mst_ship
+          continue unless ship?.api_sortno
+          ships[ship.api_sortno] = ship
+        shipgraph = []
+        for ship in body.api_mst_shipgraph
+          shipgraph[ship.api_id] = ship
+        @setState
+          isLogin: true
+          ships: ships
+          shipgraph: shipgraph
+      when '/kcsapi/api_port/port', '/kcsapi/api_get_member/deck', '/kcsapi/api_req_hensei/change'
+        {_decks, _ships} = window
+        ship = _decks[0]?.api_ship[0]
+        if ship? and ship > 0
+          secretary = _ships[ship].api_ship_id
+          @setState
+            fleetSecretary: secretary
+          if @state.notifySecretary == 0
+            @updateNotifyConfig(secretary)
+
+  ###
+   * Update notification config using audio of ship.
+   * Will fallback to default if an audio file is not found, 
+  ###
+  updateNotifyConfig: (ship_id) ->
+    setConfig = (key, audio) ->
+      config.set(key, audio)
+      request.head audio, (error, response, body) ->
+        return if !error and response?.statusCode == 200
+        config.set(key, null)
+
+    return unless ship_id > 0
+    admiral_id = parseInt(window._nickNameId) || 0
+    server = SERVERS[(ship_id + admiral_id) % SERVERS.length]
+    filename = @state.shipgraph[ship_id]?.api_filename
+    return unless server
+    return unless filename
+    setConfig('poi.notify.construction.audio', "http://#{server}/kcs/sound/kc#{filename}/5.mp3")
+    setConfig('poi.notify.expedition.audio', "http://#{server}/kcs/sound/kc#{filename}/7.mp3")
+    setConfig('poi.notify.repair.audio', "http://#{server}/kcs/sound/kc#{filename}/6.mp3")
+    setConfig('poi.notify.morale.audio', "http://#{server}/kcs/sound/kc#{filename}/27.mp3")
+
+  handleShipChange: (e) ->
+    ship_id = parseInt(e.target.value)
+    return if ship_id is NaN
+    # Save secretary config
+    config.set('plugin.secretary.ship', ship_id)
+    @setState
+      notifySecretary: ship_id
+    # Update notify config
+    if ship_id == 0
+      @updateNotifyConfig(@state.fleetSecretary)
+    else
+      @updateNotifyConfig(ship_id)
+
+  handleAudition: (type) ->
+    switch type
+      when 'construction'
+        notify null,
+          type: 'construction'
+      when 'expedition'
+        notify null,
+          type: 'expedition'
+      when 'repair'
+        notify null,
+          type: 'repair'
+      when 'morale'
+        notify null,
+          type: 'morale'
+
+  handleDisable: ->
+    for s in ['construction', 'repair', 'expedition', 'morale']
+      config.set("poi.notify.#{s}.audio")
+    config.set('plugin.secretary.ship', -1)
+    @setState
+      notifySecretary: -1
+
+  render: ->
+    <div>
+      <link rel="stylesheet" href={join(relative(ROOT, __dirname), 'assets', 'secretary.css')} />
+
+      <div className="divider">
+        <h5>{__ 'Notification sound'}</h5>
+        <hr />
+      </div>
+      <Grid>
+        <Col xs={12}>
+        {
+          if @state.isLogin
+            options = []
+            if @state.notifySecretary == -1
+              options.push(
+                <option key={-1} value={-1}>
+                  {__ 'Disabled'}
+                </option>
+              )
+            options.push(
+              <option key={0} value={0}>
+                {__ 'Current secretary'}: {
+                  if $ships[@state.fleetSecretary]?
+                    __r $ships[@state.fleetSecretary].api_name
+                  else
+                    __ 'Unknown'
+                }
+              </option>
+            )
+            for ship, i in @state.ships
+              continue unless ship?.api_sortno
+              options.push(
+                <option key={i} value={ship.api_id}>
+                  No.{zerofill ship.api_sortno} {__r ship.api_name}
+                </option>
+              )
+            <Input type="select" value={@state.notifySecretary} onChange={@handleShipChange}>
+              {options}
+            </Input>
+          else
+            <Input type="select" value={0} disabled>
+              <option key={0} value={0}>{__ 'Not logged in'}</option>
+            </Input>
+        }
+        </Col>
+      </Grid>
+
+      <div className="divider">
+        <h5>{__ 'Test'}</h5>
+        <hr />
+      </div>
+      <Grid>
+        <Col xs={12}>
+          <Alert bsStyle='warning'>
+            {__ "Some ships have no docking voice"}
+          </Alert>
+        </Col>
+        <Col xs={12}>
+          <ButtonGroup style={display: 'flex'}>
+            <Button bsStyle={'success'} style={flex: '1'}
+              onClick={@handleAudition.bind(this, 'construction')}>{__ 'Construction'}</Button>
+            <Button bsStyle={'success'} style={flex: '1'}
+              onClick={@handleAudition.bind(this, 'repair')}>{__ 'Docking'}</Button>
+            <Button bsStyle={'success'} style={flex: '1'}
+              onClick={@handleAudition.bind(this, 'expedition')}>{__ 'Expedition'}</Button>
+            <Button bsStyle={'success'} style={flex: '1'}
+              onClick={@handleAudition.bind(this, 'morale')}>{__ 'Morale'}</Button>
+          </ButtonGroup>
+        </Col>
+      </Grid>
+      <div className="divider">
+        <h5>{__ 'Advanced'}</h5>
+        <hr />
+      </div>
+      <Grid>
+        <Col xs={6}>
+          <OverlayTrigger placement='top' overlay={
+              <Tooltip id="secretary-reset-note">{__ "Reset to default audio poi"}</Tooltip>
+            }>
+            <Button bsStyle='warning' style={width: '100%'} onClick={@handleDisable}>
+              {__ 'Disable'}
+            </Button>
+          </OverlayTrigger>
+        </Col>
+      </Grid>
+
+    </div>
+
 module.exports =
   name: 'secretary'
   displayName: [<FontAwesome name='file-audio-o' key={0} />, " #{__ 'Secretary'}"]
@@ -54,176 +240,4 @@ module.exports =
   show: true
   priority: 8
   version: '0.0.0'  # See package.json
-  reactClass: React.createClass
-    getInitialState: ->
-      # 0=fleet secretary, -1=disable, 1~*=$ships[]
-      notifySecretary: config.get('plugin.secretary.ship', 0)
-      fleetSecretary: null
-      # Game data
-      isLogin: false
-      ships: []
-      shipgraph: []
-    componentDidMount: ->
-      window.addEventListener 'game.response', @handleResponse
-    componentWillUnmount: ->
-      window.removeEventListener 'game.response', @handleResponse
-
-    handleResponse: (e) ->
-      {method, path, body, postBody} = e.detail
-      switch path
-        when '/kcsapi/api_start2'
-          # Ships can be owned by player only, sorted by sortno.
-          ships = []
-          for ship in body.api_mst_ship
-            continue unless ship?.api_sortno
-            ships[ship.api_sortno] = ship
-          shipgraph = []
-          for ship in body.api_mst_shipgraph
-            shipgraph[ship.api_id] = ship
-          @setState
-            isLogin: true
-            ships: ships
-            shipgraph: shipgraph
-        when '/kcsapi/api_port/port', '/kcsapi/api_get_member/deck', '/kcsapi/api_req_hensei/change'
-          {_decks, _ships} = window
-          ship = _decks[0]?.api_ship[0]
-          if ship? and ship > 0
-            secretary = _ships[ship].api_ship_id
-            @setState
-              fleetSecretary: secretary
-            if @state.notifySecretary == 0
-              @updateNotifyConfig(secretary)
-
-    updateNotifyConfig: (ship_id) ->
-      return unless ship_id > 0
-      admiral_id = parseInt(window._nickNameId) || 0
-      server = SERVERS[(ship_id + admiral_id) % SERVERS.length]
-      filename = @state.shipgraph[ship_id]?.api_filename
-      return unless server
-      return unless filename
-      audio_constr = "http://#{server}/kcs/sound/kc#{filename}/5.mp3"
-      audio_expedi = "http://#{server}/kcs/sound/kc#{filename}/7.mp3"
-      audio_repair = "http://#{server}/kcs/sound/kc#{filename}/6.mp3"
-      audio_morale = "http://#{server}/kcs/sound/kc#{filename}/27.mp3"
-      config.set('poi.notify.construction.audio', audio_constr)
-      config.set('poi.notify.expedition.audio', audio_expedi)
-      config.set('poi.notify.repair.audio', audio_repair)
-      config.set('poi.notify.morale.audio', audio_morale)
-
-    handleShipChange: (e) ->
-      ship_id = parseInt(e.target.value)
-      return if ship_id is NaN
-      # Save secretary config
-      config.set('plugin.secretary.ship', ship_id)
-      @setState
-        notifySecretary: ship_id
-      # Update notify config
-      if ship_id == 0
-        @updateNotifyConfig(@state.fleetSecretary)
-      else
-        @updateNotifyConfig(ship_id)
-
-    handleAudition: (type) ->
-      switch type
-        when 'construction'
-          notify null,
-            type: 'construction'
-        when 'expedition'
-          notify null,
-            type: 'expedition'
-        when 'repair'
-          notify null,
-            type: 'repair'
-        when 'morale'
-          notify null,
-            type: 'morale'
-
-    handleDisable: ->
-      for s in ['construction', 'repair', 'expedition', 'morale']
-        config.set("poi.notify.#{s}.audio")
-      config.set('plugin.secretary.ship', -1)
-      @setState
-        notifySecretary: -1
-
-    render: ->
-      <div>
-        <link rel="stylesheet" href={join(relative(ROOT, __dirname), 'assets', 'secretary.css')} />
-
-        <div className="divider">
-          <h5>{__ 'Notification sound'}</h5>
-          <hr />
-        </div>
-        <Grid>
-          <Col xs=12>
-          {
-            if @state.isLogin
-              options = []
-              if @state.notifySecretary == -1
-                options.push(
-                  <option key={-1} value={-1}>
-                    {__ 'Disabled'}
-                  </option>
-                )
-              options.push(
-                <option key={0} value={0}>
-                  {__ 'Current secretary'}: {
-                    if $ships[@state.fleetSecretary]?
-                      __r $ships[@state.fleetSecretary].api_name
-                    else
-                      __ 'Unknown'
-                  }
-                </option>
-              )
-              for ship, i in @state.ships
-                continue unless ship?.api_sortno
-                options.push(
-                  <option key={i} value={ship.api_id}>
-                    No.{zerofill ship.api_sortno} {__r ship.api_name}
-                  </option>
-                )
-              <Input type="select" value={@state.notifySecretary} onChange={@handleShipChange}>
-                {options}
-              </Input>
-            else
-              <Input type="select" value={0} disabled>
-                <option key={0} value={0}>{__ 'Not logged in'}</option>
-              </Input>
-          }
-          </Col>
-        </Grid>
-
-        <div className="divider">
-          <h5>{__ 'Test'}</h5>
-          <hr />
-        </div>
-        <Grid>
-          <Col xs={12}>
-            <ButtonGroup style={display: 'flex'}>
-              <Button bsStyle={'success'} style={flex: '1'}
-                onClick={@handleAudition.bind(this, 'construction')}>{__ 'Construction'}</Button>
-              <Button bsStyle={'success'} style={flex: '1'}
-                onClick={@handleAudition.bind(this, 'repair')}>{__ 'Docking'}</Button>
-              <Button bsStyle={'success'} style={flex: '1'}
-                onClick={@handleAudition.bind(this, 'expedition')}>{__ 'Expedition'}</Button>
-              <Button bsStyle={'success'} style={flex: '1'}
-                onClick={@handleAudition.bind(this, 'morale')}>{__ 'Morale'}</Button>
-            </ButtonGroup>
-          </Col>
-        </Grid>
-        <div className="divider">
-          <h5>{__ 'Advanced'}</h5>
-          <hr />
-        </div>
-        <Grid>
-          <Col xs=6>
-            <OverlayTrigger placement='top' overlay={
-                <Tooltip id="secretary-reset-note">{__ "Reset to default audio poi"}</Tooltip>
-              }>
-              <Button bsStyle='warning' style={width: '100%'} onClick={@handleDisable}>
-                {__ 'Disable'}
-              </Button>
-            </OverlayTrigger>
-          </Col>
-        </Grid>
-
-      </div>
+  reactClass: SecretaryArea
