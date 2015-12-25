@@ -1,5 +1,4 @@
 {
-  "Reset": "重置",
   "Advanced": "高級設置",
   "Construction": "建造",
   "Expedition": "遠征",
@@ -11,6 +10,9 @@
   "Unknown": "未知",
   "Secretary": "祕書通知",
   "Test": "測試",
+  "Disable": "禁用",
+  "Disabled": "已禁用",
   "Use secretary voice as notification sound.": "將祕書艦語音設置爲通知語音",
-  "Default poi: Reset to default audio poi": "默認語音 poi: 恢復默認語音 poi"
+  "Reset to default audio poi": "恢復默認語音 poi",
+  "": ""
 }
