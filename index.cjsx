@@ -5,11 +5,12 @@ request = require 'request'
 
 # i18n
 window.i18n.secretary = new(require 'i18n-2')
-  locales: ['en-US', 'ja-JP', 'zh-CN', 'zh-TW'],
-  defaultLocale: 'zh-CN',
-  directory: join(__dirname, 'i18n'),
-  updateFiles: false,
+  locales: ['en-US', 'ja-JP', 'zh-CN', 'zh-TW']
+  defaultLocale: 'zh-CN'
+  directory: path.join(__dirname, "i18n")
   extension: '.json'
+  updateFiles: false
+  devMode: false
 window.i18n.secretary.setLocale(window.language)
 __ = window.i18n.secretary.__.bind(window.i18n.secretary)
 __r = window.i18n.resources.__.bind(window.i18n.resources)
