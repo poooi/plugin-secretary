@@ -108,6 +108,7 @@ SecretaryArea = React.createClass
     setConfig('poi.notify.expedition.audio', "http://#{server}/kcs/sound/kc#{filename}/7.mp3")
     setConfig('poi.notify.repair.audio', "http://#{server}/kcs/sound/kc#{filename}/6.mp3")
     setConfig('poi.notify.morale.audio', "http://#{server}/kcs/sound/kc#{filename}/27.mp3")
+    setConfig('plugin.prophet.notify.damagedAudio', "http://#{server}/kcs/sound/kc#{filename}/21.mp3")
 
   handleShipChange: (e) ->
     ship_id = parseInt(e.target.value)
