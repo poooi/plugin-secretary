@@ -95,7 +95,7 @@ SecretaryArea = React.createClass
   updateNotifyConfig: (ship_id) ->
     setConfig = (key, audio) ->
       config.set(key, audio)
-      request.head
+      request.get
         url: audio
         proxy: POI_PROXY
       , (error, response, body) ->
