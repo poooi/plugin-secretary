@@ -38,7 +38,6 @@ SERVERS = [
   '203.104.209.55',
   '203.104.209.102'
 ]
-POI_PROXY = "http://127.0.0.1:#{config.get('poi.port', 12450)}/"
 
 zerofill = (n) ->
   pad = "000"
@@ -95,12 +94,11 @@ SecretaryArea = React.createClass
   updateNotifyConfig: (ship_id) ->
     setConfig = (key, audio) ->
       config.set(key, audio)
-      request.get
-        url: audio
-        proxy: POI_PROXY
-      , (error, response, body) ->
-        return if !error and response?.statusCode == 200
-        config.set(key, null)
+      xhr = new XMLHttpRequest()
+      xhr.open("GET", audio)
+      xhr.onabort = xhr.onerror = xhr.onload = (e) ->
+        config.set(key, null) if @status != 200
+      xhr.send()
 
     return unless ship_id > 0
     admiral_id = parseInt(window._nickNameId) || 0
