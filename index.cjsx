@@ -38,6 +38,14 @@ SERVERS = [
   '203.104.209.55',
   '203.104.209.102'
 ]
+CONFIG = {
+  'poi.notify.construction.audio': 5
+  'poi.notify.expedition.audio': 7
+  'poi.notify.repair.audio': 6
+  'poi.notify.morale.audio': 27
+  'plugin.prophet.notify.damagedAudio': 21
+}
+
 
 zerofill = (n) ->
   pad = "000"
@@ -106,11 +114,8 @@ SecretaryArea = React.createClass
     filename = @state.shipgraph[ship_id]?.api_filename
     return unless server
     return unless filename
-    setConfig('poi.notify.construction.audio', "http://#{server}/kcs/sound/kc#{filename}/5.mp3")
-    setConfig('poi.notify.expedition.audio', "http://#{server}/kcs/sound/kc#{filename}/7.mp3")
-    setConfig('poi.notify.repair.audio', "http://#{server}/kcs/sound/kc#{filename}/6.mp3")
-    setConfig('poi.notify.morale.audio', "http://#{server}/kcs/sound/kc#{filename}/27.mp3")
-    setConfig('plugin.prophet.notify.damagedAudio', "http://#{server}/kcs/sound/kc#{filename}/21.mp3")
+    for key, id of CONFIG
+      setConfig(key, "http://#{server}/kcs/sound/kc#{filename}/#{id}.mp3")
 
   handleShipChange: (e) ->
     ship_id = parseInt(e.target.value)
@@ -126,23 +131,12 @@ SecretaryArea = React.createClass
       @updateNotifyConfig(ship_id)
 
   handleAudition: (type) ->
-    switch type
-      when 'construction'
-        notify null,
-          type: 'construction'
-      when 'expedition'
-        notify null,
-          type: 'expedition'
-      when 'repair'
-        notify null,
-          type: 'repair'
-      when 'morale'
-        notify null,
-          type: 'morale'
+    notify null,
+      type: type
 
   handleDisable: ->
-    for s in ['construction', 'repair', 'expedition', 'morale']
-      config.set("poi.notify.#{s}.audio")
+    for key, id of CONFIG
+      config.set(key, null)
     config.set('plugin.secretary.ship', -1)
     @setState
       notifySecretary: -1
