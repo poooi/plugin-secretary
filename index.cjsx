@@ -217,13 +217,9 @@ SecretaryArea = React.createClass
       </div>
       <Grid>
         <Col xs={6}>
-          <OverlayTrigger placement='top' overlay={
-              <Tooltip id="secretary-reset-note">{__ "Reset to default audio poi"}</Tooltip>
-            }>
-            <Button bsStyle='warning' style={width: '100%'} onClick={@handleDisable}>
-              {__ 'Disable'}
-            </Button>
-          </OverlayTrigger>
+          <Button bsStyle='warning' style={width: '100%'} onClick={@handleDisable}>
+            {__ 'Reset to default audio poi'}
+          </Button>
         </Col>
       </Grid>
 
