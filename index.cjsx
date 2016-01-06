@@ -146,7 +146,7 @@ SecretaryArea = React.createClass
       <link rel="stylesheet" href={join(relative(ROOT, __dirname), 'assets', 'secretary.css')} />
 
       <div className="divider">
-        <h5>{__ 'Notification sound'}</h5>
+        <h5>{__ 'Notification secretary'}</h5>
         <hr />
       </div>
       <Grid>
