@@ -55,6 +55,10 @@ zerofill = (n) ->
   else
     return n
 
+voiceKey = [2475, 1555, 3347, 8691, 7847, 3595, 1767, 3311, 2507, 9651, 5321, 4473, 7117, 5947, 9489, 2669, 8741, 6149, 1301, 7297, 2975, 6413, 8391, 9705, 2243, 2091, 4231, 3107, 9499, 4205, 6013, 3393, 6401, 6985, 3683, 9447, 3287, 5181, 7587, 9353, 2135, 4947, 5405, 5223, 9457, 5767, 9265, 8191, 3927, 3061, 2805, 3273, 7331]
+convertFilename = (shipId, voiceId) ->
+  return (shipId + 7) * 17 * voiceKey[voiceId - 1] % 99173 + 100000
+
 SecretaryArea = React.createClass
   getInitialState: ->
     # 0=fleet secretary, -1=disable, 1~*=$ships[]
@@ -111,11 +115,12 @@ SecretaryArea = React.createClass
     return unless ship_id > 0
     admiral_id = parseInt(window._nickNameId) || 0
     server = SERVERS[(ship_id + admiral_id) % SERVERS.length]
-    filename = @state.shipgraph[ship_id]?.api_filename
+    shipFN = @state.shipgraph[ship_id]?.api_filename
     return unless server
-    return unless filename
+    return unless shipFN
     for key, id of CONFIG
-      setConfig(key, "http://#{server}/kcs/sound/kc#{filename}/#{id}.mp3")
+      audioFN = convertFilename ship_id, id
+      setConfig(key, "http://#{server}/kcs/sound/kc#{shipFN}/#{audioFN}.mp3")
 
   handleShipChange: (e) ->
     ship_id = parseInt(e.target.value)
