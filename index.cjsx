@@ -1,7 +1,7 @@
-request = require 'request'
 {relative, join} = require 'path-extra'
 {$, _, $$, React, ReactBootstrap, FontAwesome, ROOT} = window
 {Alert, Button, ButtonGroup, Col, Grid, Input, OverlayTrigger, Tooltip} = ReactBootstrap
+
 
 # i18n
 window.i18n.secretary = new(require 'i18n-2')
@@ -14,6 +14,7 @@ window.i18n.secretary = new(require 'i18n-2')
 window.i18n.secretary.setLocale(window.language)
 __ = window.i18n.secretary.__.bind(window.i18n.secretary)
 __r = window.i18n.resources.__.bind(window.i18n.resources)
+
 
 # constant
 SERVERS = [
@@ -72,8 +73,10 @@ SecretaryArea = React.createClass
     shipgraph: []
   componentDidMount: ->
     window.addEventListener 'game.response', @handleResponse
+    window.addEventListener 'secretary.config.disable', @handleDisable
   componentWillUnmount: ->
     window.removeEventListener 'game.response', @handleResponse
+    window.removeEventListener 'secretary.config.disable', @handleDisable
 
   handleResponse: (e) ->
     {method, path, body, postBody} = e.detail
@@ -232,6 +235,24 @@ SecretaryArea = React.createClass
 
     </div>
 
+
+SecretarySettingArea = React.createClass
+  handleDisable: ->
+    event = new Event 'secretary.config.disable'
+    window.dispatchEvent event
+
+  render: ->
+    <div>
+      <Grid>
+        <Col xs={6}>
+          <Button bsStyle='warning' style={width: '100%'} onClick={@handleDisable}>
+            {__ 'Reset to default audio poi'}
+          </Button>
+        </Col>
+      </Grid>
+    </div>
+
+
 module.exports =
   name: 'secretary'
   displayName: [<FontAwesome name='file-audio-o' key={0} />, " #{__ 'Secretary'}"]
@@ -242,3 +263,4 @@ module.exports =
   priority: 8
   version: '0.0.0'  # See package.json
   reactClass: SecretaryArea
+  settingsClass: SecretarySettingArea
