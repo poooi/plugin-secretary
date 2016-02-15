@@ -238,6 +238,11 @@ SecretaryArea = React.createClass
 
 SecretarySettingArea = React.createClass
   handleDisable: ->
+    # Write config
+    for key, id of CONFIG
+      config.set(key, null)
+    config.set('plugin.secretary.ship', -1)
+    # Dispatch event
     event = new Event 'secretary.config.disable'
     window.dispatchEvent event
 
