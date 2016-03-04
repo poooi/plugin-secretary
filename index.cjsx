@@ -4,15 +4,7 @@
 
 
 # i18n
-window.i18n.secretary = new(require 'i18n-2')
-  locales: ['en-US', 'ja-JP', 'zh-CN', 'zh-TW']
-  defaultLocale: 'zh-CN'
-  directory: join(__dirname, "i18n")
-  extension: '.json'
-  updateFiles: false
-  devMode: false
-window.i18n.secretary.setLocale(window.language)
-__ = window.i18n.secretary.__.bind(window.i18n.secretary)
+__ = window.i18n["poi-plugin-secretary"].__.bind(window.i18n["poi-plugin-secretary"])
 __r = window.i18n.resources.__.bind(window.i18n.resources)
 
 
@@ -106,7 +98,7 @@ SecretaryArea = React.createClass
 
   ###
    * Update notification config using audio of ship.
-   * Will fallback to default if an audio file is not found, 
+   * Will fallback to default if an audio file is not found,
   ###
   updateNotifyConfig: (ship_id) ->
     setConfig = (key, audio) ->
@@ -152,7 +144,7 @@ SecretaryArea = React.createClass
       notifySecretary: -1
 
   render: ->
-    <div>
+    <div id='secretary' classname='secretary'>
       <link rel="stylesheet" href={join(relative(ROOT, __dirname), 'assets', 'secretary.css')} />
 
       <div className="divider">
@@ -259,13 +251,5 @@ SecretarySettingArea = React.createClass
 
 
 module.exports =
-  name: 'secretary'
-  displayName: [<FontAwesome name='file-audio-o' key={0} />, " #{__ 'Secretary'}"]
-  description: __ 'Use secretary voice as notification sound.'
-  author: 'Dazzy Ding'
-  link: 'https://github.com/yukixz'
-  show: true
-  priority: 8
-  version: '0.0.0'  # See package.json
   reactClass: SecretaryArea
   settingsClass: SecretarySettingArea
