@@ -10,12 +10,21 @@
     "type": "git",
     "url": "git+https://github.com/poooi/plugin-secretary.git"
   },
-  "author": "Dazzy Ding",
+  "author": {
+    "name:": "Dazzy Ding",
+    "link": "https://github.com/yukixz"
+  },
   "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/poooi/plugin-secretary/issues"
   },
   "homepage": "https://github.com/poooi/plugin-secretary",
   "dependencies": {
+  },
+  "poiPlugin": {
+    "title": "Secretary",
+    "description": "Use secretary voice as notification sound.",
+    "icon": "fa/file-audio-o",
+    "priority": 8
   }
 }
