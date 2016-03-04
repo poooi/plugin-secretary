@@ -144,7 +144,7 @@ SecretaryArea = React.createClass
       notifySecretary: -1
 
   render: ->
-    <div id='secretary' classname='secretary'>
+    <div id='secretary' className='secretary'>
       <link rel="stylesheet" href={join(relative(ROOT, __dirname), 'assets', 'secretary.css')} />
 
       <div className="divider">
