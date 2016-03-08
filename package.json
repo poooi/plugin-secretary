@@ -1,6 +1,6 @@
 {
   "name": "poi-plugin-secretary",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "description": "A plugin for poi. Use secretary voice as notification sound.",
   "main": "index.cjsx",
   "scripts": {
