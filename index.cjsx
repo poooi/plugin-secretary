@@ -34,7 +34,7 @@ SERVERS = [
 CONFIG = {
   'poi.notify.construction.audio': 5
   'poi.notify.expedition.audio': 7
-  'poi.notify.repair.audio': 6
+  'poi.notify.repair.audio': 26
   'poi.notify.morale.audio': 27
   'plugin.prophet.notify.damagedAudio': 21
 }
@@ -50,8 +50,6 @@ zerofill = (n) ->
 
 voiceKey = [2475, 1555, 3347, 8691, 7847, 3595, 1767, 3311, 2507, 9651, 5321, 4473, 7117, 5947, 9489, 2669, 8741, 6149, 1301, 7297, 2975, 6413, 8391, 9705, 2243, 2091, 4231, 3107, 9499, 4205, 6013, 3393, 6401, 6985, 3683, 9447, 3287, 5181, 7587, 9353, 2135, 4947, 5405, 5223, 9457, 5767, 9265, 8191, 3927, 3061, 2805, 3273, 7331]
 convertFilename = (shipId, voiceId) ->
-  # Kadokawa doesn't provide repair voice any more. We need to use the old.
-  return voiceId if voiceId in [6]
   return (shipId + 7) * 17 * voiceKey[voiceId - 1] % 99173 + 100000
 
 SecretaryArea = React.createClass
@@ -195,11 +193,6 @@ SecretaryArea = React.createClass
         <hr />
       </div>
       <Grid>
-        <Col xs={12}>
-          <Alert bsStyle='warning'>
-            {__ "Some ships have no docking voice"}
-          </Alert>
-        </Col>
         <Col xs={12}>
           <ButtonGroup style={display: 'flex'}>
             <Button bsStyle={'success'} style={flex: '1'}
