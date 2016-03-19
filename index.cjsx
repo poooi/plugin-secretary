@@ -38,6 +38,7 @@ CONFIG = {
   'poi.notify.morale.audio': 27
   'plugin.prophet.notify.damagedAudio': 21
 }
+LOCALSTORAGE_DATA_KEY = "secretaryData"
 
 
 zerofill = (n) ->
@@ -55,13 +56,19 @@ convertFilename = (shipId, voiceId) ->
 
 SecretaryArea = React.createClass
   getInitialState: ->
+    # Load game data from localStorage.
+    try
+      {ships, shipgraph} = JSON.parse localStorage[LOCALSTORAGE_DATA_KEY]
+    catch
+      ships = null
+      shipgraph = null
+
     # 0=fleet secretary, -1=disable, 1~*=$ships[]
     notifySecretary: config.get('plugin.secretary.ship', 0)
     fleetSecretary: null
     # Game data
-    isLogin: false
-    ships: []
-    shipgraph: []
+    ships: ships  # Index by sortno
+    shipgraph: shipgraph
   componentDidMount: ->
     window.addEventListener 'game.response', @handleResponse
     window.addEventListener 'secretary.load', @pluginDidLoad
@@ -91,8 +98,9 @@ SecretaryArea = React.createClass
         shipgraph = []
         for ship in body.api_mst_shipgraph
           shipgraph[ship.api_id] = ship
+
+        localStorage[LOCALSTORAGE_DATA_KEY] = JSON.stringify {ships, shipgraph}
         @setState
-          isLogin: true
           ships: ships
           shipgraph: shipgraph
       when '/kcsapi/api_port/port', '/kcsapi/api_get_member/deck', '/kcsapi/api_req_hensei/change'
@@ -163,7 +171,7 @@ SecretaryArea = React.createClass
       <Grid>
         <Col xs={12}>
         {
-          if @state.isLogin
+          if @state.ships?
             options = []
             if @state.notifySecretary == -1
               options.push(
@@ -182,7 +190,7 @@ SecretaryArea = React.createClass
               </option>
             )
             for ship, i in @state.ships
-              continue unless ship?.api_sortno
+              continue unless ship?
               options.push(
                 <option key={i} value={ship.api_id}>
                   No.{zerofill ship.api_sortno} {__r ship.api_name}
