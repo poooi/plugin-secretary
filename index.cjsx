@@ -64,10 +64,20 @@ SecretaryArea = React.createClass
     shipgraph: []
   componentDidMount: ->
     window.addEventListener 'game.response', @handleResponse
-    window.addEventListener 'secretary.config.disable', @handleDisable
+    window.addEventListener 'secretary.load', @pluginDidLoad
+    window.addEventListener 'secretary.unload', @pluginDidUnload
   componentWillUnmount: ->
     window.removeEventListener 'game.response', @handleResponse
-    window.removeEventListener 'secretary.config.disable', @handleDisable
+    window.removeEventListener 'secretary.load', @pluginDidLoad
+    window.removeEventListener 'secretary.unload', @pluginDidUnload
+
+  pluginDidLoad: ->
+    if @state.notifySecretary > 0
+      @updateNotifyConfig(@state.notifySecretary)
+
+  pluginDidUnload: ->
+    for key, id of CONFIG
+      config.set(key, null)
 
   handleResponse: (e) ->
     {method, path, body, postBody} = e.detail
@@ -111,12 +121,12 @@ SecretaryArea = React.createClass
     return unless ship_id > 0
     admiral_id = parseInt(window._nickNameId) || 0
     server = SERVERS[(ship_id + admiral_id) % SERVERS.length]
-    shipFN = @state.shipgraph[ship_id]?.api_filename
+    shipFilename = @state.shipgraph[ship_id]?.api_filename
     return unless server
-    return unless shipFN
+    return unless shipFilename
     for key, id of CONFIG
       audioFN = convertFilename ship_id, id
-      setConfig(key, "http://#{server}/kcs/sound/kc#{shipFN}/#{audioFN}.mp3")
+      setConfig(key, "http://#{server}/kcs/sound/kc#{shipFilename}/#{audioFN}.mp3")
 
   handleShipChange: (e) ->
     ship_id = parseInt(e.target.value)
@@ -222,28 +232,9 @@ SecretaryArea = React.createClass
     </div>
 
 
-SecretarySettingArea = React.createClass
-  handleDisable: ->
-    # Write config
-    for key, id of CONFIG
-      config.set(key, null)
-    config.set('plugin.secretary.ship', -1)
-    # Dispatch event
-    event = new Event 'secretary.config.disable'
-    window.dispatchEvent event
-
-  render: ->
-    <div>
-      <Grid>
-        <Col xs={6}>
-          <Button bsStyle='warning' style={width: '100%'} onClick={@handleDisable}>
-            {__ 'Reset to default audio poi'}
-          </Button>
-        </Col>
-      </Grid>
-    </div>
-
-
 module.exports =
   reactClass: SecretaryArea
-  settingsClass: SecretarySettingArea
+  pluginDidLoad: ->
+    window.dispatchEvent new Event 'secretary.load'
+  pluginDidUnload: ->
+    window.dispatchEvent new Event 'secretary.unload'
