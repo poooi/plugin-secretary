@@ -71,20 +71,19 @@ SecretaryArea = React.createClass
     shipgraph: shipgraph
   componentDidMount: ->
     window.addEventListener 'game.response', @handleResponse
-    window.addEventListener 'secretary.load', @pluginDidLoad
-    window.addEventListener 'secretary.unload', @pluginDidUnload
+    window.addEventListener 'secretary.unload', @pluginWillUnload
+    @pluginDidLoad()
   componentWillUnmount: ->
     window.removeEventListener 'game.response', @handleResponse
-    window.removeEventListener 'secretary.load', @pluginDidLoad
-    window.removeEventListener 'secretary.unload', @pluginDidUnload
+    window.removeEventListener 'secretary.unload', @pluginWillUnload
 
   pluginDidLoad: ->
     if @state.notifySecretary > 0
       @updateNotifyConfig(@state.notifySecretary)
 
-  pluginDidUnload: ->
+  pluginWillUnload: ->
     for key, id of CONFIG
-      config.set(key, null)
+      config.set(key)
 
   handleResponse: (e) ->
     {method, path, body, postBody} = e.detail
@@ -129,7 +128,7 @@ SecretaryArea = React.createClass
     return unless ship_id > 0
     admiral_id = parseInt(window._nickNameId) || 0
     server = SERVERS[(ship_id + admiral_id) % SERVERS.length]
-    shipFilename = @state.shipgraph[ship_id]?.api_filename
+    shipFilename = @state.shipgraph?[ship_id]?.api_filename
     return unless server
     return unless shipFilename
     for key, id of CONFIG
@@ -155,7 +154,7 @@ SecretaryArea = React.createClass
 
   handleDisable: ->
     for key, id of CONFIG
-      config.set(key, null)
+      config.set(key)
     config.set('plugin.secretary.ship', -1)
     @setState
       notifySecretary: -1
@@ -242,7 +241,5 @@ SecretaryArea = React.createClass
 
 module.exports =
   reactClass: SecretaryArea
-  pluginDidLoad: ->
-    window.dispatchEvent new Event 'secretary.load'
-  pluginDidUnload: ->
+  pluginWillUnload: ->
     window.dispatchEvent new Event 'secretary.unload'
