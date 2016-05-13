@@ -2,7 +2,7 @@
   "name": "poi-plugin-secretary",
   "version": "0.6.1",
   "description": "A plugin for poi. Use secretary voice as notification sound.",
-  "main": "index.cjsx",
+  "main": "index",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -11,7 +11,7 @@
     "url": "git+https://github.com/poooi/plugin-secretary.git"
   },
   "author": {
-    "name:": "Dazzy Ding",
+    "name": "Dazzy Ding",
     "link": "https://github.com/yukixz"
   },
   "license": "Apache-2.0",
