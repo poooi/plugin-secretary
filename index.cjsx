@@ -85,9 +85,10 @@ SecretaryArea = React.createClass
     nextHour.setHours nextHour.getHours()+1
     nextHour.setMinutes 0
     nextHour.setSeconds 0
+    nextHour.setMilliseconds 0
     scheduler.schedule @hourly_notify,
       time: nextHour.getTime()
-      interval: 1000 * 60 *60
+      interval: 1000 * 60 * 60
       allowImmediate: true
     console.log("scheduled hourly notify, next notify: #{nextHour.toString()}")
     if @state.notifySecretary > 0
@@ -171,7 +172,8 @@ SecretaryArea = React.createClass
     @setState
       notifySecretary: -1
 
-  hourly_notify: (hour) ->
+  hourly_notify: (time) ->
+    # time: epoch time format, because scheduler will pass a current time arg
     if not config.get('poi.content.muted', false)
       return
     if not config.get('plugin.secretary.enable', false)
@@ -181,7 +183,10 @@ SecretaryArea = React.createClass
       ship_id = getStore('info.ships')[getStore('info.fleets')[0].api_ship[0]]?.api_ship_id
     if not _.find(getStore('const').$ships, (sh) -> return sh.api_id == ship_id)?.api_voicef > 1
       return
-    nowHour = if hour then hour else new Date().getHours()
+    if arguments.length == 0
+      nowHour = new Date().getHours()
+    else
+      nowHour = new Date(time).getHours()
     admiral_id = parseInt(window._nickNameId) || 0
     server = SERVERS[(ship_id + admiral_id) % SERVERS.length]
     shipFilename = @state.shipgraph?[ship_id]?.api_filename
