@@ -1,6 +1,7 @@
 {relative, join} = require 'path-extra'
 {$, _, $$, React, ReactBootstrap, FontAwesome, ROOT} = window
 {Alert, Button, ButtonGroup, Col, Grid, Input, OverlayTrigger, Tooltip} = ReactBootstrap
+scheduler = require 'views/services/scheduler'
 
 
 # i18n
@@ -54,6 +55,27 @@ vcKey = [604825,607300,613847,615318,624009,631856,635451,637218,640529,643036,6
 convertFilename = (shipId, voiceId) ->
   return (shipId + 7) * 17 * (vcKey[voiceId] - vcKey[voiceId - 1]) % 99173 + 100000
 
+hourly_notify = (hour) ->
+  if not config.get('poi.content.muted', false)
+    return
+  if not config.get('plugin.secretary.enable', false)
+    return
+  ship_id = config.get('plugin.secretary.ship', 0)
+  if ship_id == 0
+    ship_id = getStore('info.ships')[getStore('info.fleets')?[0].api_ship[0]?]?.api_id
+  if not _.find(getStore('const').$ships, (sh) -> return sh.api_id == ship_id)?.voicef > 1
+    return
+  nowHour = if hour then hour else new Date().getHours()
+  admiral_id = parseInt(window._nickNameId) || 0
+  server = SERVERS[(ship_id + admiral_id) % SERVERS.length]
+  shipFilename = _.find(getStore('const').$shipgraph, (sg) -> return sg.api_id == ship_id)?.api_filename
+  console.log(ship_id, nowHour, admiral_id, server, shipFilename)
+  return unless server
+  return unless shipFilename
+  audioFN = convertFilename ship_id, (nowHour + 30)
+  notify "#{nowHour}H00",
+    audio: "http://#{server}/kcs/sound/kc#{shipFilename}/#{audioFN}.mp3"
+
 SecretaryArea = React.createClass
   getInitialState: ->
     # Load game data from localStorage.
@@ -78,6 +100,16 @@ SecretaryArea = React.createClass
     window.removeEventListener 'secretary.unload', @pluginWillUnload
 
   pluginDidLoad: ->
+    hourly_notify()
+    nextHour = new Date()
+    nextHour.setHours nextHour.getHours()+1
+    nextHour.setMinutes 0
+    nextHour.setSeconds 0
+    scheduler.schedule hourly_notify,
+      time: nextHour.getTime()
+      interval: 1000 * 60 *60
+      allowImmediate: true
+    console.log("scheduled hourly notify, next notify: #{nextHour.toString()}")
     if @state.notifySecretary > 0
       @updateNotifyConfig(@state.notifySecretary)
 
