@@ -61,7 +61,7 @@ hourly_notify = (hour) ->
   if not config.get('plugin.secretary.enable', false)
     return
   ship_id = config.get('plugin.secretary.ship', 0)
-  if ship_id === 0
+  if ship_id == 0
     ship_id = getStore('info.ships')[getStore('info.fleets')[0].api_ship[0]]?.api_ship_id
   if not _.find(getStore('const').$ships, (sh) -> return sh.api_id == ship_id)?.api_voicef > 1
     return
