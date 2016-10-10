@@ -1,7 +1,7 @@
 {relative, join} = require 'path-extra'
 {$, _, $$, React, ReactBootstrap, FontAwesome, ROOT} = window
 {Alert, Button, ButtonGroup, Col, Grid, Input, OverlayTrigger, Tooltip, Checkbox} = ReactBootstrap
-scheduler = require 'views/services/scheduler'
+scheduler = require './scheduler'
 
 
 # i18n
