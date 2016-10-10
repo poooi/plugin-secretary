@@ -159,7 +159,8 @@ SecretaryArea = React.createClass
         audio = "http://#{server}/kcs/sound/kc#{shipFilename}/#{audioFN}.mp3"
         config.set("plugin.secretary.hourly_voice.#{hour}", audio)
     else
-      config.set("plugin.secretary.hourly_voice")
+      config.set("plugin.secretary.hourly_voice", [])
+    @hourly_notify()
 
   handleShipChange: (e) ->
     ship_id = parseInt(e.target.value)
@@ -196,9 +197,14 @@ SecretaryArea = React.createClass
     else
       nowHour = new Date(time).getHours()
     console.log(nowHour)
-    audio = config.get("plugin.secretary.hourly_voice.#{nowHour}", '')
+    audio = config.get("plugin.secretary.hourly_voice", [])?[nowHour]
+    console.log(audio)
     return unless audio
-    notify "#{nowHour}H00",
+    pad = "00"
+    nowHourString = nowHour.toString()
+    if nowHourString.length < pad.length
+      nowHourString = (pad + nowHourString).slice(-pad.length)
+    notify __("It's %s now", "#{nowHourString}00"),
       audio: audio
 
   render: ->
