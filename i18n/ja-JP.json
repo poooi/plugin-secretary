@@ -14,5 +14,9 @@
   "Use secretary voice as notification sound.": "秘書艦のボイスが通知音を設定します",
   "Reset to default audio poi": "デフォルトの通知音を復元する poi",
   "Some ships have no docking voice": "一部の艦娘は入渠ボイスがありません",
+  "It's %s now": "%s です",
+  "Hourly Voice": "時報",
+  "Play secretary's hourly voice when volume off": "ボリュームオフ時に秘書艦時報を再生する",
+  "No voice available": "時報ありません",
   "": ""
 }

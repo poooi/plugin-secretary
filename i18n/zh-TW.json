@@ -14,5 +14,9 @@
   "Use secretary voice as notification sound.": "將祕書艦語音設置爲通知語音",
   "Reset to default audio poi": "恢復默認語音 poi",
   "Some ships have no docking voice": "部份艦娘無入渠語音",
+  "It's %s now": "現在時間是 %s",
+  "Hourly Voice": "報時",
+  "Play secretary's hourly voice when volume off": "在關閉遊戲聲音時播放祕書艦報時",
+  "No voice available": "無可用報時語音",
   "": ""
 }

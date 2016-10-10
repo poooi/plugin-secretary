@@ -1,6 +1,7 @@
 {relative, join} = require 'path-extra'
 {$, _, $$, React, ReactBootstrap, FontAwesome, ROOT} = window
-{Alert, Button, ButtonGroup, Col, Grid, Input, OverlayTrigger, Tooltip} = ReactBootstrap
+{Alert, Button, ButtonGroup, Col, Grid, Input, OverlayTrigger, Tooltip, Checkbox} = ReactBootstrap
+scheduler = require './scheduler'
 
 
 # i18n
@@ -69,6 +70,9 @@ SecretaryArea = React.createClass
     # Game data
     ships: ships  # Index by sortno
     shipgraph: shipgraph
+    # hourly voice
+    enableHourlyVoice: config.get('plugin.secretary.hourly_voice_enable', false)
+    hasHourlyVoice: false
   componentDidMount: ->
     window.addEventListener 'game.response', @handleResponse
     window.addEventListener 'secretary.unload', @pluginWillUnload
@@ -78,12 +82,23 @@ SecretaryArea = React.createClass
     window.removeEventListener 'secretary.unload', @pluginWillUnload
 
   pluginDidLoad: ->
+    nextHour = new Date()
+    nextHour.setHours nextHour.getHours()+1
+    nextHour.setMinutes 0
+    nextHour.setSeconds 0
+    nextHour.setMilliseconds 0
+    scheduler.schedule @hourly_notify,
+      time: nextHour.getTime()
+      interval: 1000 * 60 * 60
+      allowImmediate: true
+    console.log("scheduled hourly notify, next notify: #{nextHour.toString()}")
     if @state.notifySecretary > 0
       @updateNotifyConfig(@state.notifySecretary)
 
   pluginWillUnload: ->
     for key, id of CONFIG
       config.set(key)
+    scheduler._tasks = []
 
   handleResponse: (e) ->
     {method, path, body, postBody} = e.detail
@@ -135,6 +150,10 @@ SecretaryArea = React.createClass
       audioFN = convertFilename ship_id, id
       setConfig(key, "http://#{server}/kcs/sound/kc#{shipFilename}/#{audioFN}.mp3")
 
+    {$ships} =  window
+    @setState
+      hasHourlyVoice: $ships[ship_id]?.api_voicef > 1
+
   handleShipChange: (e) ->
     ship_id = parseInt(e.target.value)
     return if ship_id is NaN
@@ -158,6 +177,44 @@ SecretaryArea = React.createClass
     config.set('plugin.secretary.ship', -1)
     @setState
       notifySecretary: -1
+
+  handleSetHourlyVoice: ->
+    config.set('plugin.secretary.hourly_voice_enable', !@state.enableHourlyVoice)
+    @setState
+      enableHourlyVoice: !@state.enableHourlyVoice
+
+  handleHourlyVoiceClick: ->
+    @hourly_notify()
+
+  hourly_notify: (time) ->
+    # time: epoch time format, because scheduler will pass a current time arg
+    return unless config.get('poi.content.muted', false)
+    return unless config.get('plugin.secretary.hourly_voice_enable', false)
+    return unless @state.hasHourlyVoice
+    return unless @state.notifySecretary >= 0
+
+    if arguments.length == 0
+      nowHour = new Date().getHours()
+    else
+      nowHour = new Date(time).getHours()
+
+    if @state.notifySecretary # case for 0
+      ship_id = @state.notifySecretary
+    else
+      ship_id = @state.fleetSecretary
+
+    admiral_id = parseInt(window._nickNameId) || 0
+    server = SERVERS[(ship_id + admiral_id) % SERVERS.length]
+    shipFilename = @state.shipgraph?[ship_id]?.api_filename
+    return unless server
+    return unless shipFilename
+    audioFN = convertFilename ship_id, (nowHour + 30)
+    pad = "00"
+    nowHourString = nowHour.toString()
+    if nowHourString.length < pad.length
+      nowHourString = (pad + nowHourString).slice(-pad.length)
+    notify __("It's %s now", "#{nowHourString}00"),
+      audio: "http://#{server}/kcs/sound/kc#{shipFilename}/#{audioFN}.mp3"
 
   render: ->
     <div id='secretary' className='secretary'>
@@ -224,18 +281,43 @@ SecretaryArea = React.createClass
           </ButtonGroup>
         </Col>
       </Grid>
+
+      <div className="divider">
+        <h5>{__ 'Hourly Voice'}</h5>
+        <hr />
+      </div>
+      <Grid>
+        <Col xs={8}>
+          <Checkbox checked={@state.enableHourlyVoice} onChange={@handleSetHourlyVoice}>
+          {__("Play secretary's hourly voice when volume off")}
+          </Checkbox>
+        </Col>
+        <Col>
+          <Button
+          bsStyle = {if @state.hasHourlyVoice and @state.enableHourlyVoice then 'success' else 'info'}
+          onClick = {@handleHourlyVoiceClick}
+          disabled = {!@state.hasHourlyVoice or !@state.enableHourlyVoice}>
+          {
+            if @state.hasHourlyVoice
+              __("Test")
+            else
+              __("No voice available")
+          }
+          </Button>
+        </Col>
+      </Grid>
+
       <div className="divider">
         <h5>{__ 'Advanced'}</h5>
         <hr />
       </div>
       <Grid>
-        <Col xs={6}>
+        <Col xs={8}>
           <Button bsStyle='warning' style={width: '100%'} onClick={@handleDisable}>
             {__ 'Reset to default audio poi'}
           </Button>
         </Col>
       </Grid>
-
     </div>
 
 
