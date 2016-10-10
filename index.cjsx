@@ -98,6 +98,7 @@ SecretaryArea = React.createClass
   pluginWillUnload: ->
     for key, id of CONFIG
       config.set(key)
+    scheduler._tasks = []
 
   handleResponse: (e) ->
     {method, path, body, postBody} = e.detail
@@ -149,16 +150,9 @@ SecretaryArea = React.createClass
       audioFN = convertFilename ship_id, id
       setConfig(key, "http://#{server}/kcs/sound/kc#{shipFilename}/#{audioFN}.mp3")
 
+    {$ships} =  window
     @setState
-      hasHourlyVoice: _.find(getStore('const').$ships, (sh) -> return sh.api_id == ship_id)?.api_voicef > 1
-
-    if @state.hasHourlyVoice
-      [0...24].map (hour) ->
-        audioFN = convertFilename ship_id, (hour + 30)
-        audio = "http://#{server}/kcs/sound/kc#{shipFilename}/#{audioFN}.mp3"
-        config.set("plugin.secretary.hourly_voice.#{hour}", audio)
-    else
-      config.set("plugin.secretary.hourly_voice", [])
+      hasHourlyVoice: $ships[ship_id]?.api_voicef > 1
 
   handleShipChange: (e) ->
     ship_id = parseInt(e.target.value)
@@ -198,18 +192,30 @@ SecretaryArea = React.createClass
     return unless config.get('plugin.secretary.enable', false)
     return unless config.get('plugin.secretary.hourly_voice_enable', false)
     return unless @state.hasHourlyVoice
+    return unless @state.notifySecretary >= 0
+
     if arguments.length == 0
       nowHour = new Date().getHours()
     else
       nowHour = new Date(time).getHours()
-    audio = config.get("plugin.secretary.hourly_voice", [])?[nowHour]
-    return unless audio
+
+    if @state.notifySecretary # case for 0
+      ship_id = @state.notifySecretary
+    else
+      ship_id = @state.fleetSecretary
+
+    admiral_id = parseInt(window._nickNameId) || 0
+    server = SERVERS[(ship_id + admiral_id) % SERVERS.length]
+    shipFilename = @state.shipgraph?[ship_id]?.api_filename
+    return unless server
+    return unless shipFilename
+    audioFN = convertFilename ship_id, (nowHour + 30)
     pad = "00"
     nowHourString = nowHour.toString()
     if nowHourString.length < pad.length
       nowHourString = (pad + nowHourString).slice(-pad.length)
     notify __("It's %s now", "#{nowHourString}00"),
-      audio: audio
+      audio: "http://#{server}/kcs/sound/kc#{shipFilename}/#{audioFN}.mp3"
 
   render: ->
     <div id='secretary' className='secretary'>
