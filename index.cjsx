@@ -71,6 +71,8 @@ SecretaryArea = React.createClass
     # Game data
     ships: ships  # Index by sortno
     shipgraph: shipgraph
+    # hourly voiceId
+    hasHourlyVoice: false
   componentDidMount: ->
     window.addEventListener 'game.response', @handleResponse
     window.addEventListener 'secretary.unload', @pluginWillUnload
@@ -80,7 +82,6 @@ SecretaryArea = React.createClass
     window.removeEventListener 'secretary.unload', @pluginWillUnload
 
   pluginDidLoad: ->
-    @hourly_notify()
     nextHour = new Date()
     nextHour.setHours nextHour.getHours()+1
     nextHour.setMinutes 0
@@ -148,6 +149,18 @@ SecretaryArea = React.createClass
       audioFN = convertFilename ship_id, id
       setConfig(key, "http://#{server}/kcs/sound/kc#{shipFilename}/#{audioFN}.mp3")
 
+    @setState
+      hasHourlyVoice: _.find(getStore('const').$ships, (sh) -> return sh.api_id == ship_id)?.api_voicef > 1
+    console.log(@state.hasHourlyVoice)
+
+    if @state.hasHourlyVoice
+      [0...24].map (hour) ->
+        audioFN = convertFilename ship_id, (hour + 30)
+        audio = "http://#{server}/kcs/sound/kc#{shipFilename}/#{audioFN}.mp3"
+        config.set("plugin.secretary.hourly_voice.#{hour}", audio)
+    else
+      config.set("plugin.secretary.hourly_voice")
+
   handleShipChange: (e) ->
     ship_id = parseInt(e.target.value)
     return if ship_id is NaN
@@ -174,28 +187,19 @@ SecretaryArea = React.createClass
 
   hourly_notify: (time) ->
     # time: epoch time format, because scheduler will pass a current time arg
-    if not config.get('poi.content.muted', false)
-      return
-    if not config.get('plugin.secretary.enable', false)
-      return
-    ship_id = config.get('plugin.secretary.ship', 0)
-    if ship_id == 0
-      ship_id = getStore('info.ships')[getStore('info.fleets')[0].api_ship[0]]?.api_ship_id
-    if not _.find(getStore('const').$ships, (sh) -> return sh.api_id == ship_id)?.api_voicef > 1
-      return
+    return unless config.get('poi.content.muted', false)
+    return unless config.get('plugin.secretary.enable', false)
+    return unless config.get('plugin.secretary.hourly_voice_enable', false)
+    return unless @state.hasHourlyVoice
     if arguments.length == 0
       nowHour = new Date().getHours()
     else
       nowHour = new Date(time).getHours()
-    admiral_id = parseInt(window._nickNameId) || 0
-    server = SERVERS[(ship_id + admiral_id) % SERVERS.length]
-    shipFilename = @state.shipgraph?[ship_id]?.api_filename
-    console.log(ship_id, nowHour, admiral_id, server, shipFilename)
-    return unless server
-    return unless shipFilename
-    audioFN = convertFilename ship_id, (nowHour + 30)
+    console.log(nowHour)
+    audio = config.get("plugin.secretary.hourly_voice.#{nowHour}", '')
+    return unless audio
     notify "#{nowHour}H00",
-      audio: "http://#{server}/kcs/sound/kc#{shipFilename}/#{audioFN}.mp3"
+      audio: audio
 
   render: ->
     <div id='secretary' className='secretary'>
