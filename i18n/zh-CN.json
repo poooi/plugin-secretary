@@ -15,5 +15,8 @@
   "Reset to default audio poi": "恢复默认语音 poi",
   "Some ships have no docking voice": "部分舰娘无入渠语音",
   "It's %s now": "现在时间是 %s",
+  "Hourly Voice": "报时",
+  "Play secretary's hourly voice when volume off": "在关闭游戏声音时播放秘书舰报时",
+  "No voice available": "无可用报时语音",
   "": ""
 }
