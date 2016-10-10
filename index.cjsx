@@ -55,7 +55,6 @@ vcKey = [604825,607300,613847,615318,624009,631856,635451,637218,640529,643036,6
 convertFilename = (shipId, voiceId) ->
   return (shipId + 7) * 17 * (vcKey[voiceId] - vcKey[voiceId - 1]) % 99173 + 100000
 
-
 SecretaryArea = React.createClass
   getInitialState: ->
     # Load game data from localStorage.
@@ -71,7 +70,7 @@ SecretaryArea = React.createClass
     # Game data
     ships: ships  # Index by sortno
     shipgraph: shipgraph
-    # hourly voiceId
+    # hourly voice
     enableHourlyVoice: config.get('plugin.secretary.hourly_voice_enable', false)
     hasHourlyVoice: false
   componentDidMount: ->
