@@ -189,7 +189,6 @@ SecretaryArea = React.createClass
   hourly_notify: (time) ->
     # time: epoch time format, because scheduler will pass a current time arg
     return unless config.get('poi.content.muted', false)
-    return unless config.get('plugin.secretary.enable', false)
     return unless config.get('plugin.secretary.hourly_voice_enable', false)
     return unless @state.hasHourlyVoice
     return unless @state.notifySecretary >= 0
