@@ -1,6 +1,6 @@
 {relative, join} = require 'path-extra'
 {$, _, $$, React, ReactBootstrap, FontAwesome, ROOT} = window
-{Alert, Button, ButtonGroup, Col, Grid, Input, OverlayTrigger, Tooltip, Checkbox} = ReactBootstrap
+{Alert, Button, ButtonGroup, Col, Grid, Input, OverlayTrigger, Tooltip, Checkbox, Row} = ReactBootstrap
 scheduler = require './scheduler'
 
 
@@ -287,13 +287,14 @@ SecretaryArea = React.createClass
         <hr />
       </div>
       <Grid>
+      <Row>
         <Col xs={12}>
           <Checkbox checked={@state.enableHourlyVoice} onChange={@handleSetHourlyVoice}>
           {__("Play secretary's hourly voice when volume off")}
           </Checkbox>
         </Col>
-      </Grid>
-      <Grid>
+      </Row>
+      <Row>
         <Col xs={8}>
           <Button
           bsStyle = {if @state.hasHourlyVoice and @state.enableHourlyVoice then 'success' else 'info'}
@@ -307,6 +308,7 @@ SecretaryArea = React.createClass
           }
           </Button>
         </Col>
+      </Row>  
       </Grid>
 
       <div className="divider">
