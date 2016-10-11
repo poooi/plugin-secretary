@@ -287,12 +287,14 @@ SecretaryArea = React.createClass
         <hr />
       </div>
       <Grid>
-        <Col xs={8}>
+        <Col xs={12}>
           <Checkbox checked={@state.enableHourlyVoice} onChange={@handleSetHourlyVoice}>
           {__("Play secretary's hourly voice when volume off")}
           </Checkbox>
         </Col>
-        <Col>
+      </Grid>
+      <Grid>
+        <Col xs={8}>
           <Button
           bsStyle = {if @state.hasHourlyVoice and @state.enableHourlyVoice then 'success' else 'info'}
           onClick = {@handleHourlyVoiceClick}
