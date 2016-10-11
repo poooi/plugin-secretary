@@ -2,6 +2,7 @@
 {$, _, $$, React, ReactBootstrap, FontAwesome, ROOT} = window
 {Alert, Button, ButtonGroup, Col, Grid, Input, OverlayTrigger, Tooltip, Checkbox, Row} = ReactBootstrap
 scheduler = require './scheduler'
+{map, pick, keyBy, remove} = require 'lodash'
 
 
 # i18n
@@ -105,13 +106,12 @@ SecretaryArea = React.createClass
     switch path
       when '/kcsapi/api_start2'
         # Ships can be owned by player only, sorted by sortno.
-        ships = []
-        for ship in body.api_mst_ship
-          continue unless ship?.api_sortno
-          ships[ship.api_sortno] = ship
-        shipgraph = []
-        for ship in body.api_mst_shipgraph
-          shipgraph[ship.api_id] = ship
+        ships = map body.api_mst_ship, (ship) -> pick(ship, ['api_id', 'api_name', 'api_sortno'])
+        remove ships, (ship) -> !ship.api_sortno
+        ships = keyBy ships, 'api_sortno'
+
+        shipgraph = map body.api_mst_shipgraph, (ship) -> pick(ship, ['api_id', 'api_filename'])
+        shipgraph = keyBy shipgraph, 'api_id'
 
         localStorage[LOCALSTORAGE_DATA_KEY] = JSON.stringify {ships, shipgraph}
         @setState
@@ -245,7 +245,7 @@ SecretaryArea = React.createClass
                 }
               </option>
             )
-            for ship, i in @state.ships
+            for i, ship of @state.ships
               continue unless ship?
               options.push(
                 <option key={i} value={ship.api_id}>
@@ -308,7 +308,7 @@ SecretaryArea = React.createClass
           }
           </Button>
         </Col>
-      </Row>  
+      </Row>
       </Grid>
 
       <div className="divider">
