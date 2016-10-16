@@ -65,7 +65,7 @@ SecretaryArea = React.createClass
       ships = null
       shipgraph = null
 
-    # 0=fleet secretary, -1=disable, 1~*=$ships[]
+    # 0=fleet secretary, 1~*=$ships[]
     notifySecretary: config.get('plugin.secretary.ship', 0)
     fleetSecretary: null
     # Game data
@@ -171,13 +171,6 @@ SecretaryArea = React.createClass
     notify null,
       type: type
 
-  handleDisable: ->
-    for key, id of CONFIG
-      config.set(key)
-    config.set('plugin.secretary.ship', -1)
-    @setState
-      notifySecretary: -1
-
   handleSetHourlyVoice: ->
     config.set('plugin.secretary.hourly_voice_enable', !@state.enableHourlyVoice)
     @setState
@@ -226,42 +219,45 @@ SecretaryArea = React.createClass
         <hr />
       </div>
       <Grid>
-        <Col xs={12}>
-        {
-          if @state.ships?
-            options = []
-            if @state.notifySecretary == -1
+        <Row>
+          <Col xs={12}>
+          {
+            if @state.ships?
+              options = []
               options.push(
-                <option key={-1} value={-1}>
-                  {__ 'Disabled'}
+                <option key={0} value={0}>
+                  {__ 'Current secretary'}: {
+                    if $ships[@state.fleetSecretary]?
+                      __r $ships[@state.fleetSecretary].api_name
+                    else
+                      __ 'Unknown'
+                  }
                 </option>
               )
-            options.push(
-              <option key={0} value={0}>
-                {__ 'Current secretary'}: {
-                  if $ships[@state.fleetSecretary]?
-                    __r $ships[@state.fleetSecretary].api_name
-                  else
-                    __ 'Unknown'
-                }
-              </option>
-            )
-            for i, ship of @state.ships
-              continue unless ship?
-              options.push(
-                <option key={i} value={ship.api_id}>
-                  No.{zerofill ship.api_sortno} {__r ship.api_name}
-                </option>
-              )
-            <Input type="select" value={@state.notifySecretary} onChange={@handleShipChange}>
-              {options}
-            </Input>
-          else
-            <Input type="select" value={0} disabled>
-              <option key={0} value={0}>{__ 'Not logged in'}</option>
-            </Input>
-        }
-        </Col>
+              for i, ship of @state.ships
+                continue unless ship?
+                options.push(
+                  <option key={i} value={ship.api_id}>
+                    No.{zerofill ship.api_sortno} {__r ship.api_name}
+                  </option>
+                )
+              <Input type="select" value={@state.notifySecretary} onChange={@handleShipChange}>
+                {options}
+              </Input>
+            else
+              <Input type="select" value={0} disabled>
+                <option key={0} value={0}>{__ 'Not logged in'}</option>
+              </Input>
+          }
+          </Col>
+        </Row>
+        <Row>
+          <Col xs={12}>
+            <Checkbox checked={@state.enableHourlyVoice} onChange={@handleSetHourlyVoice}>
+            {__("Play secretary's hourly voice when volume off")}
+            </Checkbox>
+          </Col>
+        </Row>
       </Grid>
 
       <div className="divider">
@@ -269,59 +265,29 @@ SecretaryArea = React.createClass
         <hr />
       </div>
       <Grid>
-        <Col xs={12}>
-          <ButtonGroup style={display: 'flex'}>
-            <Button bsStyle={'success'} style={flex: '1'}
-              onClick={@handleAudition.bind(this, 'construction')}>{__ 'Construction'}</Button>
-            <Button bsStyle={'success'} style={flex: '1'}
-              onClick={@handleAudition.bind(this, 'repair')}>{__ 'Docking'}</Button>
-            <Button bsStyle={'success'} style={flex: '1'}
-              onClick={@handleAudition.bind(this, 'expedition')}>{__ 'Expedition'}</Button>
-            <Button bsStyle={'success'} style={flex: '1'}
-              onClick={@handleAudition.bind(this, 'morale')}>{__ 'Morale'}</Button>
-          </ButtonGroup>
-        </Col>
-      </Grid>
-
-      <div className="divider">
-        <h5>{__ 'Hourly Voice'}</h5>
-        <hr />
-      </div>
-      <Grid>
-      <Row>
-        <Col xs={12}>
-          <Checkbox checked={@state.enableHourlyVoice} onChange={@handleSetHourlyVoice}>
-          {__("Play secretary's hourly voice when volume off")}
-          </Checkbox>
-        </Col>
-      </Row>
-      <Row>
-        <Col xs={8}>
-          <Button
-          bsStyle = {if @state.hasHourlyVoice and @state.enableHourlyVoice then 'success' else 'info'}
-          onClick = {@handleHourlyVoiceClick}
-          disabled = {!@state.hasHourlyVoice or !@state.enableHourlyVoice}>
-          {
-            if @state.hasHourlyVoice
-              __("Test")
-            else
-              __("No voice available")
-          }
-          </Button>
-        </Col>
-      </Row>
-      </Grid>
-
-      <div className="divider">
-        <h5>{__ 'Advanced'}</h5>
-        <hr />
-      </div>
-      <Grid>
-        <Col xs={8}>
-          <Button bsStyle='warning' style={width: '100%'} onClick={@handleDisable}>
-            {__ 'Reset to default audio poi'}
-          </Button>
-        </Col>
+        <Row>
+          <Col xs={12}>
+            <ButtonGroup style={display: 'flex'}>
+              <Button bsStyle={'success'} style={flex: '1'}
+                onClick={@handleAudition.bind(this, 'construction')}>{__ 'Construction'}</Button>
+              <Button bsStyle={'success'} style={flex: '1'}
+                onClick={@handleAudition.bind(this, 'repair')}>{__ 'Docking'}</Button>
+              <Button bsStyle={'success'} style={flex: '1'}
+                onClick={@handleAudition.bind(this, 'expedition')}>{__ 'Expedition'}</Button>
+              <Button bsStyle={'success'} style={flex: '1'}
+                onClick={@handleAudition.bind(this, 'morale')}>{__ 'Morale'}</Button>
+            </ButtonGroup>
+          </Col>
+          <Col xs={4}>
+            <Button
+              style={{width: '100%'}}
+              bsStyle = {if @state.hasHourlyVoice and @state.enableHourlyVoice then 'success' else 'info'}
+              disabled = {!@state.hasHourlyVoice or !@state.enableHourlyVoice}
+              onClick = {@handleHourlyVoiceClick}>
+            {__("Hourly Voice")}
+            </Button>
+          </Col>
+        </Row>
       </Grid>
     </div>
 
