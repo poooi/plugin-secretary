@@ -1,7 +1,8 @@
 {relative, join} = require 'path-extra'
 {$, _, $$, React, ReactBootstrap, FontAwesome, ROOT} = window
-{Alert, Button, ButtonGroup, Col, Grid, Input, OverlayTrigger, Tooltip, Checkbox} = ReactBootstrap
+{Alert, Button, ButtonGroup, Col, Grid, Input, OverlayTrigger, Tooltip, Checkbox, Row} = ReactBootstrap
 scheduler = require './scheduler'
+{map, pick, keyBy, remove} = require 'lodash'
 
 
 # i18n
@@ -105,13 +106,12 @@ SecretaryArea = React.createClass
     switch path
       when '/kcsapi/api_start2'
         # Ships can be owned by player only, sorted by sortno.
-        ships = []
-        for ship in body.api_mst_ship
-          continue unless ship?.api_sortno
-          ships[ship.api_sortno] = ship
-        shipgraph = []
-        for ship in body.api_mst_shipgraph
-          shipgraph[ship.api_id] = ship
+        ships = map body.api_mst_ship, (ship) -> pick(ship, ['api_id', 'api_name', 'api_sortno'])
+        remove ships, (ship) -> !ship.api_sortno
+        ships = keyBy ships, 'api_sortno'
+
+        shipgraph = map body.api_mst_shipgraph, (ship) -> pick(ship, ['api_id', 'api_filename'])
+        shipgraph = keyBy shipgraph, 'api_id'
 
         localStorage[LOCALSTORAGE_DATA_KEY] = JSON.stringify {ships, shipgraph}
         @setState
@@ -214,6 +214,7 @@ SecretaryArea = React.createClass
     if nowHourString.length < pad.length
       nowHourString = (pad + nowHourString).slice(-pad.length)
     notify __("It's %s now", "#{nowHourString}00"),
+      title: __ 'Hourly Voice'
       audio: "http://#{server}/kcs/sound/kc#{shipFilename}/#{audioFN}.mp3"
 
   render: ->
@@ -245,7 +246,7 @@ SecretaryArea = React.createClass
                 }
               </option>
             )
-            for ship, i in @state.ships
+            for i, ship of @state.ships
               continue unless ship?
               options.push(
                 <option key={i} value={ship.api_id}>
@@ -287,12 +288,15 @@ SecretaryArea = React.createClass
         <hr />
       </div>
       <Grid>
-        <Col xs={8}>
+      <Row>
+        <Col xs={12}>
           <Checkbox checked={@state.enableHourlyVoice} onChange={@handleSetHourlyVoice}>
           {__("Play secretary's hourly voice when volume off")}
           </Checkbox>
         </Col>
-        <Col>
+      </Row>
+      <Row>
+        <Col xs={8}>
           <Button
           bsStyle = {if @state.hasHourlyVoice and @state.enableHourlyVoice then 'success' else 'info'}
           onClick = {@handleHourlyVoiceClick}
@@ -305,6 +309,7 @@ SecretaryArea = React.createClass
           }
           </Button>
         </Col>
+      </Row>
       </Grid>
 
       <div className="divider">
