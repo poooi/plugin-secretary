@@ -14,6 +14,6 @@
   "Some ships have no docking voice": "一部の艦娘は入渠ボイスがありません",
   "It's %s now": "%s です",
   "Hourly Voice": "時報ボイス",
-  "Play secretary's hourly voice when volume off": "ボリュームがオンの時に秘書艦の時報ボイスを再生する",
+  "Play secretary's hourly voice when volume off": "ボリュームがオフの時に秘書艦の時報ボイスを再生する",
   "": ""
 }
