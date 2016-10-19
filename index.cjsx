@@ -206,7 +206,7 @@ SecretaryArea = React.createClass
     nowHourString = nowHour.toString()
     if nowHourString.length < pad.length
       nowHourString = (pad + nowHourString).slice(-pad.length)
-    notify __("It's %s now", "#{nowHourString}00"),
+    notify null,
       title: __ 'Hourly Voice'
       audio: "http://#{server}/kcs/sound/kc#{shipFilename}/#{audioFN}.mp3"
 
