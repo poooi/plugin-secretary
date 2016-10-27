@@ -2,7 +2,7 @@
   "name": "poi-plugin-secretary",
   "version": "0.7.1",
   "description": "A plugin for poi. Use secretary voice as notification sound.",
-  "main": "index",
+  "main": "index.es",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -21,10 +21,21 @@
   "homepage": "https://github.com/poooi/plugin-secretary",
   "dependencies": {
   },
+  "devDependencies": {
+    "babel-eslint": "^7.0.0",
+    "eslint": "^3.8.1",
+    "eslint-plugin-import": "^2.0.1",
+    "eslint-plugin-react": "^6.4.1",
+    "fs-extra": ">=0.30.0",
+    "lodash": ">=4.16.4"
+  },
   "poiPlugin": {
     "title": "Secretary",
     "description": "Use secretary voice as notification sound.",
     "icon": "fa/file-audio-o",
-    "priority": 8
+    "priority": 8,
+    "apiVer": {
+        "6.99.99":"0.7.1"
+      }
   }
 }
