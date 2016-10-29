@@ -1,17 +1,24 @@
 import {relative, join} from 'path-extra'
 const {$, _, $$, ROOT, $ships} = window
-import FontAwesome from 'react-fontawesome'
+// import FontAwesome from 'react-fontawesome'
 import React, { Component } from 'react'
-import {Alert, Button, ButtonGroup, Col, Grid, Input, OverlayTrigger, Tooltip, Checkbox, Row} from 'react-bootstrap'
+import {Button, ButtonGroup, Col, Grid, Input, Checkbox, Row} from 'react-bootstrap'
 import scheduler from './scheduler'
-
+import { connect } from 'react-redux'
+import { createSelector  } from 'reselect'
+import {
+  extensionSelectorFactory,
+  fleetShipsIdSelectorFactory,
+  configSelector,
+  constSelector,
+} from 'views/utils/selectors'
 
 // i18n
 const __ = window.i18n["poi-plugin-secretary"].__.bind(window.i18n["poi-plugin-secretary"])
 const __r = window.i18n.resources.__.bind(window.i18n.resources)
 
 
-// constant
+// constants
 const SERVERS = [
   '203.104.209.71',
   '203.104.209.87',
@@ -42,13 +49,69 @@ const CONFIG = {
   'plugin.prophet.notify.damagedAudio': 21,
 }
 const LOCALSTORAGE_DATA_KEY = "secretaryData"
+const EXTENSION_KEY = "secretaryData"
 
+// selectors
+const pluginDataSelector = createSelector (
+  [extensionSelectorFactory(EXTENSION_KEY)],
+  (state) => state || {}
+)
 
-const zerofill = (n) => {
-  let pad = "000"
+const fleetSecretaryIdSelector = createSelector(
+  [fleetShipsIdSelectorFactory(0)],
+  (shipId) => shipId[0]
+)
+
+const notifySecretaryIdSelector = createSelector(
+  [configSelector],
+  (config) => _.get('plugin.secretary.ship', 0)
+)
+
+const enableHoulyVoiceSelector = createSelector(
+  [configSelector],
+  (config) => _.get('plugin.secretary.hourly_voice_enable', false)
+)
+
+const constShipDataSelector = createSelector(
+  [constSelector],
+  (_const) => [_const.$ships, _const.$shipgraph]
+)
+
+const availableShipsSelector = createSelector(
+  [constShipDataSelector],
+  ([ships, shipgraph]) => {
+    let availableShips = _.map(ships, (ship) => _.pick(ship, ['api_id', 'api_name', 'api_sortno']))
+    _.remove(availableShips, (ship) => !ship.api_sortno)
+    return _.keyBy(availableShips, 'api_sortno')
+  }
+)
+
+const hasHourlyVoiceSelector = createSelector(
+  [
+    constShipDataSelector,
+    fleetSecretaryIdSelector,
+    notifySecretaryIdSelector,
+  ],
+  ([ships, shipgraph], fleetSecretaryId, notifySecretaryId) => {
+    let shipId = notifySecretaryId
+    if (notifySecretaryId == 0) {
+      shipId = fleetSecretaryId
+    }
+    let ship = _.find(ships, (ship) => ship.api_id == shipId)
+    if (ship != null){
+      return ship.api_voicef > 1
+    }
+    return false // default value
+  }
+)
+
+const zerofill = (n,len) => {
+  // n: the number to fill with zeroes
+  // len: the length to fill
+  let pad = new Array(len).fill(0).join('')
   n = n.toString()
-  if (n.length < pad.length){
-    return (pad+n).slice(-pad.length)
+  if (n.length < len){
+    return (pad+n).slice(-len)
   }
   else{
     return n
@@ -130,8 +193,7 @@ class SecretaryArea extends Component{
   }
 
   handleResponse = (e) =>{
-    console.log("handleResponse")
-    let {method, path, body, postBody} = e.detail
+    let {path, body} = e.detail
     let shipgraph,ships, ship, secretary
     const {_decks, _ships} = window
 
@@ -176,11 +238,9 @@ class SecretaryArea extends Component{
   updateNotifyConfig = (ship_id) => {
     const setConfig = (key, audio) => {
       config.set(key, audio)
-      console.log(key, audio)
       let xhr = new XMLHttpRequest()
       xhr.open("GET", audio)
       xhr.onabort = xhr.onerror = xhr.onload = (e) => {
-        console.log(xhr)
         if (xhr.status != 200) config.set(key, null)
       }
       xhr.send()
@@ -194,7 +254,6 @@ class SecretaryArea extends Component{
     if (this.state.shipgraph[ship_id] != null){
       shipFilename = this.state.shipgraph[ship_id].api_filename
     }
-    console.log(server, shipFilename)
     if (!server) return
     if (!shipFilename) return
     _.each(CONFIG, (id, key) => {
@@ -267,14 +326,10 @@ class SecretaryArea extends Component{
     }
     if (!server) return
     if (!shipFilename) return
-    let audioFN = convertFilename (ship_id, (nowHour + 30))
-    let pad = "00"
-    let nowHourString = nowHour.toString()
-    if (nowHourString.length < pad.length){
-      nowHourString = (pad + nowHourString).slice(-pad.length)
-    }
+    let audioFN = convertFilename(ship_id, (nowHour + 30))
+
     notify(null, {
-      audio: `http://${server}/kcs/sound/kc${shipFilename}/${audioFN}.mp3`
+      audio: `http://${server}/kcs/sound/kc${shipFilename}/${audioFN}.mp3`,
     })
   }
 
@@ -292,7 +347,7 @@ class SecretaryArea extends Component{
         if(ship) {
           options.push(
             <option key={i} value={ship.api_id}>
-              No.{zerofill(ship.api_sortno)} {__r(ship.api_name)}
+              No.{zerofill(ship.api_sortno, 4)} {__r(ship.api_name)}
             </option>)
         }
       })

@@ -19,6 +19,8 @@ module.exports = {
   'globals': {
     'html2canvas': false,
     "window": true,
+    "config": true,
+    "notify": true,
   },
   'rules': {
     'comma-dangle': ['error', 'always-multiline'],
