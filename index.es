@@ -110,7 +110,7 @@ const hasHourlyVoiceSelector = createSelector(
       shipId = fleetSecretaryId
     }
     let ship = _.find(ships, (ship) => ship.api_id == shipId)
-    if (ship != null){
+    if (ship != null) {
       return ship.api_voicef > 1
     }
     return false // default value
@@ -135,11 +135,11 @@ const zerofill = (n,len) => {
 
 // vcKey is extracted from Core.swf/common.util.SoundUtil
 const vcKey = [604825,607300,613847,615318,624009,631856,635451,637218,640529,643036,652687,658008,662481,669598,675545,685034,687703,696444,702593,703894,711191,714166,720579,728970,738675,740918,743009,747240,750347,759846,764051,770064,773457,779858,786843,790526,799973,803260,808441,816028,825381,827516,832463,837868,843091,852548,858315,867580,875771,879698,882759,885564,888837,896168]
-const convertFilename = (shipId, voiceId) =>{
+const convertFilename = (shipId, voiceId) => {
   return (shipId + 7) * 17 * (vcKey[voiceId] - vcKey[voiceId - 1]) % 99173 + 100000
 }
 
-const mapStateToProps = (state, props) =>{
+const mapStateToProps = (state, props) => {
   return {
     notifySecretary: notifySecretaryIdSelector(state),
     fleetSecretary: fleetSecretaryIdSelector(state),
@@ -163,21 +163,21 @@ class SecretaryArea extends Component{
     window.removeEventListener ('secretary.unload', this.pluginWillUnload)
   }
 
-  componentDidUpdate(){
-    // this is to cover the case when
-    // using fleet secretary's voice and changed the secretary
-    // since the component's handleShipChange can not cover it
-    // and updateNotifyConfig cannot be called from outside selector
-    if(this.props.notifySecretary == 0){
-      this.updateNotifyConfig(this.props.fleetSecretary)
+  componentWillReceiveProps(nextProps) {
+    if(this.props.notifySecretary == nextProps.notifySecretary &&
+    this.props.fleetSecretary == nextProps.fleetSecretary){
+      return
     }
     else {
-      this.updateNotifyConfig(this.props.notifySecretary)
-      // updateNotifyConfig will cover the -1 case
+      nextProps.notifySecretary ? (
+        this.updateNotifyConfig(nextProps.notifySecretary)
+      ) : (
+        this.updateNotifyConfig(nextProps.fleetSecretary)
+      )
     }
   }
 
-  pluginDidLoad = () =>{
+  pluginDidLoad = () => {
     let nextHour = new Date()
     nextHour.setHours (nextHour.getHours()+1)
     nextHour.setMinutes (0)
@@ -195,7 +195,7 @@ class SecretaryArea extends Component{
     // }
   }
 
-  pluginWillUnload = () =>{
+  pluginWillUnload = () => {
     _.each(CONFIG, (id, key) => {
       config.set(key)
     })
@@ -401,7 +401,7 @@ SecretaryArea.propTypes = {
   hasHourlyVoice: React.PropTypes.bool.isRequired,
 }
 
-export const pluginWillUnload = () =>{
+export const pluginWillUnload = () => {
   window.dispatchEvent(new Event('secretary.unload'))
 }
 
