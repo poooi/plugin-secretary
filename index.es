@@ -11,6 +11,7 @@ import {
   configSelector,
   constSelector,
   shipsSelector,
+  createDeepCompareArraySelector,
 } from 'views/utils/selectors'
 
 // i18n
@@ -84,7 +85,7 @@ const constShipDataSelector = createSelector(
   (_const) => [_const.$ships, _const.$shipgraph]
 )
 
-const availableShipsSelector = createSelector(
+const availableShipsSelector = createDeepCompareArraySelector(
   [constShipDataSelector],
   ([ships, shipgraph]) => {
     let availableShips = _.map(ships, (ship) => _.pick(ship, ['api_id', 'api_name', 'api_sortno']))
@@ -93,7 +94,7 @@ const availableShipsSelector = createSelector(
   }
 )
 
-const shipgraphSelector = createSelector(
+const shipgraphSelector = createDeepCompareArraySelector(
   [constShipDataSelector],
   ([ships, shipgraph]) => {
     let _shipgraph = _.map(shipgraph, (ship) => _.pick(ship, ['api_id', 'api_filename']))
@@ -101,7 +102,7 @@ const shipgraphSelector = createSelector(
   }
 )
 
-const hasHourlyVoiceSelector = createSelector(
+const hasHourlyVoiceSelector = createDeepCompareArraySelector(
   [
     constShipDataSelector,
     fleetSecretaryIdSelector,
