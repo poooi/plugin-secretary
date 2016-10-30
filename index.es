@@ -61,8 +61,11 @@ const fleetSecretaryIdSelector = createSelector(
     shipsSelector,
   ],
   (shipId, ships) => {
-    return ships[shipId[0]].api_ship_id || 0
-    // case 0 will be covered in updateNotifyConfig
+    if ( shipId && ships && ships[shipId[0]] != null){
+      return ships[shipId[0]].api_ship_id || 0
+      // case 0 will be covered in updateNotifyConfig
+    }
+    return 0
   }
 )
 
