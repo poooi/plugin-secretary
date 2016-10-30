@@ -1,6 +1,6 @@
 import {relative, join} from 'path-extra'
-const {$, _, $$, ROOT, $ships} = window
-// import FontAwesome from 'react-fontawesome'
+import _ from 'lodash'
+const {ROOT} = window
 import React, { Component } from 'react'
 import {Button, ButtonGroup, Col, Grid, Input, Checkbox, Row} from 'react-bootstrap'
 import scheduler from './scheduler'
@@ -162,6 +162,19 @@ class SecretaryArea extends Component{
     window.removeEventListener ('secretary.unload', this.pluginWillUnload)
   }
 
+  componentWillUpdate(nextProps, nextState){
+    // this is to cover the case when
+    // using fleet secretary's voice and changed the secretary
+    // since the component's handleShipChange can not cover it
+    // and updateNotifyConfig cannot be called from outside selector
+    if(nextProps.notifySecretary == 0){
+      this.updateNotifyConfig(nextProps.fleetSecretary)
+    }
+    else {
+      this.updateNotifyConfig(nextProps.notifySecretary)
+    }
+  }
+
   pluginDidLoad = () =>{
     let nextHour = new Date()
     nextHour.setHours (nextHour.getHours()+1)
@@ -175,9 +188,9 @@ class SecretaryArea extends Component{
         allowImmediate: true,
       })
     console.log(`scheduled hourly notify, next notify: ${nextHour.toString()}`)
-    if (this.props.notifySecretary > 0){
-      this.updateNotifyConfig(this.props.notifySecretary)
-    }
+    // if (this.props.notifySecretary > 0){
+    //   this.updateNotifyConfig(this.props.notifySecretary)
+    // }
   }
 
   pluginWillUnload = () =>{
@@ -218,17 +231,20 @@ class SecretaryArea extends Component{
   }
 
   handleShipChange = (e) => {
+    console.log(e)
     let ship_id = parseInt(e.target.value)
+    console.log(ship_id, this.props.fleetSecretary)
     if (Number.isNaN(ship_id)) return
     // Save secretary config
     config.set('plugin.secretary.ship', ship_id)
     // Update notify config
-    if (ship_id == 0){
-      this.updateNotifyConfig(this.props.fleetSecretary)
-    }
-    else {
-      this.updateNotifyConfig(ship_id)
-    }
+    console.log(ship_id, this.props.fleetSecretary)
+    // if (ship_id == 0){
+    //   this.updateNotifyConfig(this.props.fleetSecretary)
+    // }
+    // else {
+    //   this.updateNotifyConfig(ship_id)
+    // }
   }
 
   handleAudition = (type) => {
@@ -286,12 +302,13 @@ class SecretaryArea extends Component{
   }
 
   renderOptions = () => {
+    let currentSecretary = _.find(this.props.ships, (ship) => ship.api_id == this.props.fleetSecretary)
     if (this.props.ships != null){
       let options = []
       options.push(
         <option key={0} value={0}>
           {__('Current secretary')}: {
-            $ships[this.props.fleetSecretary] ? __r($ships[this.props.fleetSecretary].api_name) : __ ('Unknown')
+            currentSecretary ? __r(currentSecretary.api_name) : __ ('Unknown')
           }
         </option>
       )
