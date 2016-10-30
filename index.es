@@ -62,6 +62,7 @@ const fleetSecretaryIdSelector = createSelector(
   ],
   (shipId, ships) => {
     return ships[shipId[0]].api_ship_id || 0
+    // case 0 will be covered in updateNotifyConfig
   }
 )
 
@@ -77,7 +78,7 @@ const enableHoulyVoiceSelector = createSelector(
 
 const constShipDataSelector = createSelector(
   [constSelector],
-  (_const) => [_const.$ships, _const.$shipgraph] || []
+  (_const) => [_const.$ships, _const.$shipgraph]
 )
 
 const availableShipsSelector = createSelector(
@@ -162,16 +163,17 @@ class SecretaryArea extends Component{
     window.removeEventListener ('secretary.unload', this.pluginWillUnload)
   }
 
-  componentWillUpdate(nextProps, nextState){
+  componentDidUpdate(){
     // this is to cover the case when
     // using fleet secretary's voice and changed the secretary
     // since the component's handleShipChange can not cover it
     // and updateNotifyConfig cannot be called from outside selector
-    if(nextProps.notifySecretary == 0){
-      this.updateNotifyConfig(nextProps.fleetSecretary)
+    if(this.props.notifySecretary == 0){
+      this.updateNotifyConfig(this.props.fleetSecretary)
     }
     else {
-      this.updateNotifyConfig(nextProps.notifySecretary)
+      this.updateNotifyConfig(this.props.notifySecretary)
+      // updateNotifyConfig will cover the -1 case
     }
   }
 
@@ -226,19 +228,17 @@ class SecretaryArea extends Component{
     if (!shipFilename) return
     _.each(CONFIG, (id, key) => {
       let audioFN = convertFilename(ship_id, id)
+      if (Number.isNaN(audioFN)) return
       setConfig(key, `http://${server}/kcs/sound/kc${shipFilename}/${audioFN}.mp3`)
     })
   }
 
   handleShipChange = (e) => {
-    console.log(e)
     let ship_id = parseInt(e.target.value)
-    console.log(ship_id, this.props.fleetSecretary)
     if (Number.isNaN(ship_id)) return
     // Save secretary config
     config.set('plugin.secretary.ship', ship_id)
     // Update notify config
-    console.log(ship_id, this.props.fleetSecretary)
     // if (ship_id == 0){
     //   this.updateNotifyConfig(this.props.fleetSecretary)
     // }
