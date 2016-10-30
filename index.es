@@ -192,10 +192,6 @@ class SecretaryArea extends Component{
         interval: 1000 * 60 * 60,
         allowImmediate: true,
       })
-    console.log(`scheduled hourly notify, next notify: ${nextHour.toString()}`)
-    // if (this.props.notifySecretary > 0){
-    //   this.updateNotifyConfig(this.props.notifySecretary)
-    // }
   }
 
   pluginWillUnload = () => {
@@ -241,13 +237,6 @@ class SecretaryArea extends Component{
     if (Number.isNaN(ship_id)) return
     // Save secretary config
     config.set('plugin.secretary.ship', ship_id)
-    // Update notify config
-    // if (ship_id == 0){
-    //   this.updateNotifyConfig(this.props.fleetSecretary)
-    // }
-    // else {
-    //   this.updateNotifyConfig(ship_id)
-    // }
   }
 
   handleAudition = (type) => {
