@@ -67,7 +67,7 @@ const fleetSecretaryIdSelector = createSelector(
   ],
   (shipId, ships) => {
     if (shipId && ships && _.get(shipId, 0) && _.get(ships, shipId[0])) {
-      return ships[shipId[0]].api_ship_id || 0
+      return (ships[shipId[0]] || {}).api_ship_id || 0
       // case 0 will be covered in updateNotifyConfig
     }
     return 0
@@ -84,40 +84,32 @@ const enableHoulyVoiceSelector = createSelector(
   config => _.get(config, 'plugin.secretary.hourly_voice_enable', false)
 )
 
-const constShipDataSelector = createSelector(
+const availableShipsSelector = createSelector(
   [constSelector],
-  _const => [_const.$ships, _const.$shipgraph]
-)
-
-const availableShipsSelector = createDeepCompareArraySelector(
-  [constShipDataSelector],
-  ([ships, shipgraph]) => {
-    const availableShips = _.map(ships, ship => _.pick(ship, ['api_id', 'api_name', 'api_sortno']))
+  ({ $ships }) => {
+    const availableShips = _.map($ships, ship => _.pick(ship, ['api_id', 'api_name', 'api_sortno']))
     _.remove(availableShips, ship => !ship.api_sortno)
     return _.keyBy(availableShips, 'api_sortno')
   }
 )
 
-const shipgraphSelector = createDeepCompareArraySelector(
-  [constShipDataSelector],
-  ([ships, shipgraph]) => {
-    const _shipgraph = _.map(shipgraph, ship => _.pick(ship, ['api_id', 'api_filename']))
-    return _.keyBy(_shipgraph, 'api_id')
+const shipgraphSelector = createSelector(
+  [constSelector],
+  ({ $shipgraph }) => {
+    const shipgraph = _.map($shipgraph, ship => _.pick(ship, ['api_id', 'api_filename']))
+    return _.keyBy(shipgraph, 'api_id')
   }
 )
 
-const hasHourlyVoiceSelector = createDeepCompareArraySelector(
+const hasHourlyVoiceSelector = createSelector(
   [
-    constShipDataSelector,
+    constSelector,
     fleetSecretaryIdSelector,
     notifySecretaryIdSelector,
   ],
-  ([ships, shipgraph], fleetSecretaryId, notifySecretaryId) => {
-    let shipId = notifySecretaryId
-    if (notifySecretaryId == 0) {
-      shipId = fleetSecretaryId
-    }
-    const ship = _.find(ships, s => s.api_id == shipId)
+  ({ $ships, $shipgraph }, fleetSecretaryId, notifySecretaryId) => {
+    const shipId = notifySecretaryId || fleetSecretaryId
+    const ship = $ships[shipId]
     if (ship != null) {
       return ship.api_voicef > 1
     }
@@ -402,13 +394,13 @@ SecretaryArea.propTypes = {
   notifySecretary: PropTypes.number.isRequired,
   fleetSecretary: PropTypes.number.isRequired,
   ships: PropTypes.shape({
-    api_id: PropTypes.number.isRequired,
-    api_name: PropTypes.string.isRequired,
-    api_sortno: PropTypes.number.isRequired,
+    api_id: PropTypes.number,
+    api_name: PropTypes.string,
+    api_sortno: PropTypes.number,
   }).isRequired,
   shipgraph: PropTypes.shape({
-    api_id: PropTypes.number.isRequired,
-    api_filename: PropTypes.string.isRequired,
+    api_id: PropTypes.number,
+    api_filename: PropTypes.string,
   }).isRequired,
   enableHourlyVoice: PropTypes.bool.isRequired,
   hasHourlyVoice: PropTypes.bool.isRequired,
