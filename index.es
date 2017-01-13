@@ -1,11 +1,10 @@
-import {relative, join} from 'path-extra'
+import { relative, join } from 'path-extra'
 import _ from 'lodash'
-const {ROOT} = window
-import React, { Component } from 'react'
-import {Button, ButtonGroup, Col, Grid, Input, Checkbox, Row} from 'react-bootstrap'
-import scheduler from './scheduler'
+import React, { Component, PropTypes } from 'react'
 import { connect } from 'react-redux'
-import { createSelector  } from 'reselect'
+import { createSelector } from 'reselect'
+import { Button, ButtonGroup, Col, Grid, Input, Checkbox, Row } from 'react-bootstrap'
+
 import {
   fleetShipsIdSelectorFactory,
   configSelector,
@@ -14,8 +13,13 @@ import {
   createDeepCompareArraySelector,
 } from 'views/utils/selectors'
 
+import scheduler from './scheduler'
+
+
+const { ROOT, notify } = window
+
 // i18n
-const __ = window.i18n["poi-plugin-secretary"].__.bind(window.i18n["poi-plugin-secretary"])
+const __ = window.i18n['poi-plugin-secretary'].__.bind(window.i18n['poi-plugin-secretary'])
 const __r = window.i18n.resources.__.bind(window.i18n.resources)
 
 
@@ -62,7 +66,7 @@ const fleetSecretaryIdSelector = createSelector(
     shipsSelector,
   ],
   (shipId, ships) => {
-    if ( shipId && ships && _.get(shipId, 0) && _.get(ships,shipId[0])){
+    if (shipId && ships && _.get(shipId, 0) && _.get(ships, shipId[0])) {
       return ships[shipId[0]].api_ship_id || 0
       // case 0 will be covered in updateNotifyConfig
     }
@@ -72,24 +76,24 @@ const fleetSecretaryIdSelector = createSelector(
 
 const notifySecretaryIdSelector = createSelector(
   [configSelector],
-  (config) => _.get(config,'plugin.secretary.ship', 0)
+  config => _.get(config, 'plugin.secretary.ship', 0)
 )
 
 const enableHoulyVoiceSelector = createSelector(
   [configSelector],
-  (config) => _.get(config,'plugin.secretary.hourly_voice_enable', false)
+  config => _.get(config, 'plugin.secretary.hourly_voice_enable', false)
 )
 
 const constShipDataSelector = createSelector(
   [constSelector],
-  (_const) => [_const.$ships, _const.$shipgraph]
+  _const => [_const.$ships, _const.$shipgraph]
 )
 
 const availableShipsSelector = createDeepCompareArraySelector(
   [constShipDataSelector],
   ([ships, shipgraph]) => {
-    let availableShips = _.map(ships, (ship) => _.pick(ship, ['api_id', 'api_name', 'api_sortno']))
-    _.remove(availableShips, (ship) => !ship.api_sortno)
+    const availableShips = _.map(ships, ship => _.pick(ship, ['api_id', 'api_name', 'api_sortno']))
+    _.remove(availableShips, ship => !ship.api_sortno)
     return _.keyBy(availableShips, 'api_sortno')
   }
 )
@@ -97,7 +101,7 @@ const availableShipsSelector = createDeepCompareArraySelector(
 const shipgraphSelector = createDeepCompareArraySelector(
   [constShipDataSelector],
   ([ships, shipgraph]) => {
-    let _shipgraph = _.map(shipgraph, (ship) => _.pick(ship, ['api_id', 'api_filename']))
+    const _shipgraph = _.map(shipgraph, ship => _.pick(ship, ['api_id', 'api_filename']))
     return _.keyBy(_shipgraph, 'api_id')
   }
 )
@@ -113,7 +117,7 @@ const hasHourlyVoiceSelector = createDeepCompareArraySelector(
     if (notifySecretaryId == 0) {
       shipId = fleetSecretaryId
     }
-    let ship = _.find(ships, (ship) => ship.api_id == shipId)
+    const ship = _.find(ships, s => s.api_id == shipId)
     if (ship != null) {
       return ship.api_voicef > 1
     }
@@ -123,24 +127,33 @@ const hasHourlyVoiceSelector = createDeepCompareArraySelector(
 
 
 // helper to convert a number into zero-filled string
-const zerofill = (n,len) => {
+const zerofill = (n, len) => {
   // n: the number to fill with zeroes
   // len: the length to fill
-  let pad = new Array(len).fill(0).join('')
-  n = n.toString()
-  if (n.length < len){
-    return (pad+n).slice(-len)
+  const pad = new Array(len).fill(0).join('')
+  const str = n.toString()
+  if (str.length < len) {
+    return (pad + str).slice(-len)
   }
-  else{
-    return n
-  }
+  return str
 }
 
 
 // vcKey is extracted from Core.swf/common.util.SoundUtil
-const vcKey = [604825,607300,613847,615318,624009,631856,635451,637218,640529,643036,652687,658008,662481,669598,675545,685034,687703,696444,702593,703894,711191,714166,720579,728970,738675,740918,743009,747240,750347,759846,764051,770064,773457,779858,786843,790526,799973,803260,808441,816028,825381,827516,832463,837868,843091,852548,858315,867580,875771,879698,882759,885564,888837,896168]
+const vcKey = [604825, 607300, 613847, 615318, 624009,
+  631856, 635451, 637218, 640529, 643036,
+  652687, 658008, 662481, 669598, 675545,
+  685034, 687703, 696444, 702593, 703894,
+  711191, 714166, 720579, 728970, 738675,
+  740918, 743009, 747240, 750347, 759846,
+  764051, 770064, 773457, 779858, 786843,
+  790526, 799973, 803260, 808441, 816028,
+  825381, 827516, 832463, 837868, 843091,
+  852548, 858315, 867580, 875771, 879698,
+  882759, 885564, 888837, 896168,
+]
 const convertFilename = (shipId, voiceId) => {
-  return (shipId + 7) * 17 * (vcKey[voiceId] - vcKey[voiceId - 1]) % 99173 + 100000
+  return (((shipId + 7) * 17 * (vcKey[voiceId] - vcKey[voiceId - 1])) % 99173) + 100000
 }
 
 const mapStateToProps = (state, props) => {
@@ -155,39 +168,33 @@ const mapStateToProps = (state, props) => {
 }
 
 
-
-class SecretaryArea extends Component{
+class SecretaryArea extends Component {
 
   componentDidMount() {
-    window.addEventListener ('secretary.unload', this.pluginWillUnload)
+    window.addEventListener('secretary.unload', this.pluginWillUnload)
     this.pluginDidLoad()
   }
 
-  componentWillUnmount() {
-    window.removeEventListener ('secretary.unload', this.pluginWillUnload)
+  componentWillReceiveProps(nextProps) {
+    if (this.props.notifySecretary != nextProps.notifySecretary ||
+    this.props.fleetSecretary != nextProps.fleetSecretary) {
+      const { notifySecretary, fleetSecretary } = nextProps
+
+      this.updateNotifyConfig(notifySecretary || fleetSecretary)
+    }
   }
 
-  componentWillReceiveProps(nextProps) {
-    if(this.props.notifySecretary == nextProps.notifySecretary &&
-    this.props.fleetSecretary == nextProps.fleetSecretary){
-      return
-    }
-    else {
-      nextProps.notifySecretary ? (
-        this.updateNotifyConfig(nextProps.notifySecretary)
-      ) : (
-        this.updateNotifyConfig(nextProps.fleetSecretary)
-      )
-    }
+  componentWillUnmount() {
+    window.removeEventListener('secretary.unload', this.pluginWillUnload)
   }
 
   pluginDidLoad = () => {
-    let nextHour = new Date()
-    nextHour.setHours (nextHour.getHours()+1)
-    nextHour.setMinutes (0)
-    nextHour.setSeconds (0)
-    nextHour.setMilliseconds (0)
-    scheduler.schedule (this.hourly_notify,
+    const nextHour = new Date()
+    nextHour.setHours(nextHour.getHours() + 1)
+    nextHour.setMinutes(0)
+    nextHour.setSeconds(0)
+    nextHour.setMilliseconds(0)
+    scheduler.schedule(this.hourly_notify,
       {
         time: nextHour.getTime(),
         interval: 1000 * 60 * 60,
@@ -208,8 +215,8 @@ class SecretaryArea extends Component{
   updateNotifyConfig = (ship_id) => {
     const setConfig = (key, audio) => {
       config.set(key, audio)
-      let xhr = new XMLHttpRequest()
-      xhr.open("GET", audio)
+      const xhr = new XMLHttpRequest()
+      xhr.open('GET', audio)
       xhr.onabort = xhr.onerror = xhr.onload = (e) => {
         if (xhr.status != 200) config.set(key, null)
       }
@@ -217,31 +224,31 @@ class SecretaryArea extends Component{
     }
 
 
-    if (ship_id <=0) return
-    let admiral_id = parseInt(window._nickNameId) || 0
-    let server = SERVERS[(ship_id + admiral_id) % SERVERS.length]
+    if (ship_id <= 0) return
+    const admiral_id = parseInt(window._nickNameId) || 0
+    const server = SERVERS[(ship_id + admiral_id) % SERVERS.length]
     let shipFilename
-    if (this.props.shipgraph[ship_id] != null){
+    if (this.props.shipgraph[ship_id] != null) {
       shipFilename = this.props.shipgraph[ship_id].api_filename
     }
     if (!server) return
     if (!shipFilename) return
     _.each(CONFIG, (id, key) => {
-      let audioFN = convertFilename(ship_id, id)
+      const audioFN = convertFilename(ship_id, id)
       if (Number.isNaN(audioFN)) return
       setConfig(key, `http://${server}/kcs/sound/kc${shipFilename}/${audioFN}.mp3`)
     })
   }
 
   handleShipChange = (e) => {
-    let ship_id = parseInt(e.target.value)
+    const ship_id = parseInt(e.target.value)
     if (Number.isNaN(ship_id)) return
     // Save secretary config
     config.set('plugin.secretary.ship', ship_id)
   }
 
-  handleAudition = (type) => {
-    notify(null, {type: type})
+  handleAudition = type => () => {
+    notify(null, { type: type })
   }
 
   handleSetHourlyVoice = () => {
@@ -256,37 +263,35 @@ class SecretaryArea extends Component{
     let nowHour = 0
     let ship_id
     // time: epoch time format, because scheduler will pass a current time arg
-    if(!config.get('poi.content.muted', false)) return
-    if(!this.props.enableHourlyVoice) return
-    if(!this.props.hasHourlyVoice) return
-    if(this.props.notifySecretary < 0) return
+    if (!config.get('poi.content.muted', false)) return
+    if (!this.props.enableHourlyVoice) return
+    if (!this.props.hasHourlyVoice) return
+    if (this.props.notifySecretary < 0) return
 
     if (time) {
       nowHour = new Date(time).getHours()
-    }
-    else {
+    } else {
       nowHour = new Date().getHours()
     }
 
 
     if (this.props.notifySecretary) {
       ship_id = this.props.notifySecretary
-    }
-    else {
+    } else {
       ship_id = this.props.fleetSecretary // if it is 0, use fleet secretary
     }
 
-    let admiral_id = parseInt(window._nickNameId) || 0
-    let server = SERVERS[(ship_id + admiral_id) % SERVERS.length]
+    const admiral_id = parseInt(window._nickNameId) || 0
+    const server = SERVERS[(ship_id + admiral_id) % SERVERS.length]
     let shipFilename
-    if(this.props.shipgraph[ship_id] != null){
+    if (this.props.shipgraph[ship_id] != null) {
       shipFilename = this.props.shipgraph[ship_id].api_filename
     }
     if (!server) return
     if (!shipFilename) return
     if (Number.isNaN(nowHour)) return
 
-    let audioFN = convertFilename(ship_id, (nowHour + 30))
+    const audioFN = convertFilename(ship_id, (nowHour + 30))
     if (Number.isNaN(audioFN)) return
 
     notify(null, {
@@ -295,87 +300,95 @@ class SecretaryArea extends Component{
   }
 
   renderOptions = () => {
-    let currentSecretary = _.find(this.props.ships, (ship) => ship.api_id == this.props.fleetSecretary)
-    if (this.props.ships != null){
-      let options = []
+    const { ships, fleetSecretary } = this.props
+    const currentSecretary = _.find(ships, ship => ship.api_id == fleetSecretary)
+    if (ships != null) {
+      const options = []
       options.push(
         <option key={0} value={0}>
           {__('Current secretary')}: {
-            currentSecretary ? __r(currentSecretary.api_name) : __ ('Unknown')
+            currentSecretary ? __r(currentSecretary.api_name) : __('Unknown')
           }
         </option>
       )
-      _.each(this.props.ships, (ship, i) =>{
-        if(ship) {
+      _.each(ships, (ship, i) => {
+        if (ship) {
           options.push(
             <option key={i} value={ship.api_id}>
               No.{zerofill(ship.api_sortno, 4)} {__r(ship.api_name)}
             </option>)
         }
       })
-      return(
-      <Input type="select" value={this.props.notifySecretary} onChange={this.handleShipChange}>
-        {options}
-      </Input>)
+      return (
+        <Input type="select" value={this.props.notifySecretary} onChange={this.handleShipChange}>
+          {options}
+        </Input>)
     }
-    else {
-      return(
-        <Input type="select" value={0} disabled>
-          <option key={0} value={0}>{__ ('Not logged in')}</option>
-        </Input>
-      )
-    }
+    return (
+      <Input type="select" value={0} disabled>
+        <option key={0} value={0}>{__('Not logged in')}</option>
+      </Input>
+    )
   }
 
   render() {
-    return(
-      <div id='secretary' className='secretary'>
+    return (
+      <div id="secretary" className="secretary">
         <link rel="stylesheet" href={join(relative(ROOT, __dirname), 'assets', 'secretary.css')} />
 
         <div className="divider">
-          <h5>{__ ('Notification secretary')}</h5>
+          <h5>{__('Notification secretary')}</h5>
           <hr />
         </div>
         <Grid>
           <Row>
             <Col xs={12}>
-            {this.renderOptions()}
+              {this.renderOptions()}
             </Col>
           </Row>
           <Row>
             <Col xs={12}>
               <Checkbox checked={this.props.enableHourlyVoice} onChange={this.handleSetHourlyVoice}>
-              {__("Play secretary's hourly voice when volume off")}
+                {__("Play secretary's hourly voice when volume off")}
               </Checkbox>
             </Col>
           </Row>
         </Grid>
 
         <div className="divider">
-          <h5>{__ ('Test')}</h5>
+          <h5>{__('Test')}</h5>
           <hr />
         </div>
         <Grid>
           <Row>
             <Col xs={12}>
               <ButtonGroup id={'voice-test'}>
-                <Button bsStyle={'success'}
-                  onClick={this.handleAudition.bind(this, 'construction')}>{__ ('Construction')}</Button>
-                <Button bsStyle={'success'}
-                  onClick={this.handleAudition.bind(this, 'repair')}>{__ ('Docking')}</Button>
-                <Button bsStyle={'success'}
-                  onClick={this.handleAudition.bind(this, 'expedition')}>{__ ('Expedition')}</Button>
-                <Button bsStyle={'success'}
-                  onClick={this.handleAudition.bind(this, 'morale')}>{__ ('Morale')}</Button>
+                <Button
+                  bsStyle={'success'}
+                  onClick={this.handleAudition('construction')}
+                >{__('Construction')}</Button>
+                <Button
+                  bsStyle={'success'}
+                  onClick={this.handleAudition('repair')}
+                >{__('Docking')}</Button>
+                <Button
+                  bsStyle={'success'}
+                  onClick={this.handleAudition('expedition')}
+                >{__('Expedition')}</Button>
+                <Button
+                  bsStyle={'success'}
+                  onClick={this.handleAudition('morale')}
+                >{__('Morale')}</Button>
               </ButtonGroup>
             </Col>
             <Col xs={4}>
               <Button
-                style={{width: '100%'}}
-                bsStyle = {this.props.hasHourlyVoice && this.props.enableHourlyVoice ? 'success' : 'info'}
-                disabled = {!this.props.hasHourlyVoice || !this.props.enableHourlyVoice}
-                onClick = {this.handleHourlyVoiceClick}>
-              {__("Hourly Voice")}
+                style={{ width: '100%' }}
+                bsStyle={this.props.hasHourlyVoice && this.props.enableHourlyVoice ? 'success' : 'info'}
+                disabled={!this.props.hasHourlyVoice || !this.props.enableHourlyVoice}
+                onClick={this.handleHourlyVoiceClick}
+              >
+                {__('Hourly Voice')}
               </Button>
             </Col>
           </Row>
@@ -386,12 +399,19 @@ class SecretaryArea extends Component{
 }
 
 SecretaryArea.propTypes = {
-  notifySecretary: React.PropTypes.number.isRequired,
-  fleetSecretary: React.PropTypes.number.isRequired,
-  ships: React.PropTypes.object.isRequired,
-  shipgraph: React.PropTypes.object.isRequired,
-  enableHourlyVoice: React.PropTypes.bool.isRequired,
-  hasHourlyVoice: React.PropTypes.bool.isRequired,
+  notifySecretary: PropTypes.number.isRequired,
+  fleetSecretary: PropTypes.number.isRequired,
+  ships: PropTypes.shape({
+    api_id: PropTypes.number.isRequired,
+    api_name: PropTypes.string.isRequired,
+    api_sortno: PropTypes.number.isRequired,
+  }).isRequired,
+  shipgraph: PropTypes.shape({
+    api_id: PropTypes.number.isRequired,
+    api_filename: PropTypes.string.isRequired,
+  }).isRequired,
+  enableHourlyVoice: PropTypes.bool.isRequired,
+  hasHourlyVoice: PropTypes.bool.isRequired,
 }
 
 export const pluginWillUnload = () => {

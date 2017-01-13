@@ -9,7 +9,13 @@ module.exports = {
     'plugin:react/recommended',
     'plugin:import/errors',
     'plugin:import/warnings',
+    "airbnb",
   ],
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
   'installedESLint': true,
   'parser': 'babel-eslint',
   'plugins': [
@@ -20,7 +26,6 @@ module.exports = {
     'html2canvas': false,
     "window": true,
     "config": true,
-    "notify": true,
   },
   'rules': {
     'comma-dangle': ['error', 'always-multiline'],
@@ -32,6 +37,26 @@ module.exports = {
     'semi': ['error', 'never'],
     'unicode-bom': 'error',
     'react/prop-types': 'off',
+    'import/no-unresolved': [2, { ignore: ['views/.*'] }],
+    "react/jsx-indent": [1, 2],
+    "react/jsx-indent-props": [1, 2],
+    "react/jsx-closing-bracket-location": [1, 'tag-aligned'],
+    "comma-spacing": ["error", { "before": false, "after": true }],
+    'import/extensions': 'off',
+    'import/no-extraneous-dependencies': 'off',
+    'eqeqeq': 'off',
+    'default-case': 'off',
+    'consistent-return': 'off',
+    'no-underscore-dangle': 'off',
+    'camelcase': 'off',
+    'object-shorthand': 'off',
+    'arrow-body-style': 'off',
+    'radix': 'warn',
+    'no-return-assign': 'off',
+    'no-trailing-spaces': ["error", { "skipBlankLines": true }],
+    'react/jsx-filename-extension': 'off',
+    'jsx-a11y/no-static-element-interactions': 'off',
+    'jsx-a11y/img-has-alt': 'off',
   },
   'settings': {
     'import/resolver': {
@@ -53,6 +78,10 @@ module.exports = {
       'fs-extra',
       'lodash',
       'cson',
+      'fast-memoize',
+      'classnames',
+      'i18n-2',
+      'semver'
     ],
   },
 }
