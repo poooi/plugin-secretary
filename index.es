@@ -109,7 +109,7 @@ const hasHourlyVoiceSelector = createSelector(
   ],
   ({ $ships, $shipgraph }, fleetSecretaryId, notifySecretaryId) => {
     const shipId = notifySecretaryId || fleetSecretaryId
-    const ship = $ships[shipId]
+    const ship = ($ships || {})[shipId]
     if (ship != null) {
       return ship.api_voicef > 1
     }
