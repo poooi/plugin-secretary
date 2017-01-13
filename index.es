@@ -308,7 +308,7 @@ class SecretaryArea extends Component {
       _.each(ships, (ship, i) => {
         if (ship) {
           options.push(
-            <option key={i} value={ship.api_id}>
+            <option key={ship.api_name} value={ship.api_id}>
               No.{zerofill(ship.api_sortno, 4)} {__r(ship.api_name)}
             </option>)
         }
