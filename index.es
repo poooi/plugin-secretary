@@ -192,6 +192,8 @@ class SecretaryArea extends Component {
         interval: 1000 * 60 * 60,
         allowImmediate: true,
       })
+    const shipId = config.get('plugin.secretary.ship', 0)
+    this.updateNotifyConfig(shipId)
   }
 
   pluginWillUnload = () => {
