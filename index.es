@@ -84,6 +84,46 @@ const enableHoulyVoiceSelector = createSelector(
   config => _.get(config, 'plugin.secretary.hourly_voice_enable', false)
 )
 
+// create an object {{shipId: prototype shipId}}
+// Thanks to Tanaka, there're special cases, e.g.
+// Zara: 448, Zara 改: 356, Zara due: 496
+// their ids are not in good order, make sure to include them
+const sameShipSelector = createSelector(
+  [constSelector],
+  ({ $ships }) => {
+    const sameShips = {}
+    Object.keys($ships).forEach((id) => {
+      // skips as many $ship as possible
+      if (parseInt(id) > 500) {
+        return
+      }
+      const lastChar = $ships[id].api_name[$ships[id].api_name.length - 1]
+      if (['改', '甲', '二', '航'].includes(lastChar)) {
+        return
+      }
+      // recursive search
+      let after_id = $ships[id].api_aftershipid
+      while (parseInt(after_id) > 0 && !(after_id in sameShips)) {
+        sameShips[after_id] = sameShips[id] || id
+        after_id = $ships[after_id].api_aftershipid
+      }
+
+      // make up for special cases
+      if (!(id in sameShips)) {
+        sameShips[id] = id
+      }
+    })
+    // Object.keys(sameShips).forEach(id => console.log(`${$ships[id].api_name}(${id}): ${$ships[sameShips[id]].api_name}(${sameShips[id]})`))
+    // console.log(Object.keys($ships).filter(id => id < 500).length === Object.keys(sameShips).length)
+    const prototypes = Object.keys(sameShips).filter(id => id == sameShips[id])
+    // console.log(prototypes.map(id => $ships[id].api_name))
+    return ({
+      sameShips,
+      prototypes,
+    })
+  }
+)
+
 const availableShipsSelector = createSelector(
   [constSelector],
   ({ $ships }) => {
