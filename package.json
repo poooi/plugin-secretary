@@ -4,6 +4,9 @@
   "description": "A plugin for poi. Use secretary voice as notification sound.",
   "main": "index.es",
   "scripts": {
+    "reset": "git clean -f && git checkout .",
+    "prepack": "poi-util-transpile --sm --replace",
+    "postpublish": "npm run reset",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -26,7 +29,8 @@
     "eslint-config-airbnb": "^14.0.0",
     "eslint-plugin-import": "^2.2.0",
     "eslint-plugin-jsx-a11y": "^3.0.2",
-    "eslint-plugin-react": "^6.9.0"
+    "eslint-plugin-react": "^6.9.0",
+    "poi-util-transpile": "^7.6.2"
   },
   "poiPlugin": {
     "title": "Secretary",
@@ -34,7 +38,7 @@
     "icon": "fa/file-audio-o",
     "priority": 8,
     "apiVer": {
-      "6.99.99": "0.7.1"
+      "7.5.99": "0.7.1"
     }
   }
 }
