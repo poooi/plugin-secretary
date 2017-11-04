@@ -8,7 +8,7 @@ import Fuse from 'fuse.js'
 import { RootCloseWrapper } from 'react-overlays'
 import FA from 'react-fontawesome'
 
-import { shipDataSelector } from './selectors'
+import { shipDataSelector, shipUniqueMapSelector, adjustedRemodelChainsSelector } from './selectors'
 
 // ship types dated 20170106, beginning with id=1
 // const shipTypes = ["海防艦", "駆逐艦", "軽巡洋艦", "重雷装巡洋艦",
@@ -94,10 +94,14 @@ RadioCheck.propTypes = {
 const Menu = connect(
   state => ({
     ships: shipDataSelector(state),
+    uniqueMap: shipUniqueMapSelector(state),
+    remodelChains: adjustedRemodelChainsSelector(state),
   })
 )(class Menu extends Component {
   static propTypes = {
     ships: propTypes.objectOf(propTypes.object).isRequired,
+    uniqueMap: propTypes.objectOf(propTypes.number).isRequired,
+    remodelChains: propTypes.objectOf(propTypes.array).isRequired,
     open: propTypes.bool.isRequired,
     handleRootClose: propTypes.func.isRequired,
     onSelect: propTypes.func.isRequired,
@@ -162,7 +166,7 @@ const Menu = connect(
       query, type,
     } = this.state
     const {
-      open, handleRootClose, ships,
+      open, handleRootClose, ships, uniqueMap, remodelChains,
     } = this.props
 
     const filtered = _(this.fuse.search(query)).map(Number).value()
@@ -207,7 +211,10 @@ const Menu = connect(
                   )
                   .sortBy([
                     ship => (filtered || []).indexOf(ship.api_id),
-                    ship => ship.api_sortno,
+                    ship => ship.api_stype,
+                    ship => ship.api_ctype,
+                    ship => uniqueMap[ship.api_id],
+                    ship => (remodelChains[ship.api_id] || []).indexOf(ship.api_id),
                   ])
                   .map(
                     ship => (
