@@ -4,7 +4,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
 import { createSelector } from 'reselect'
-import { Button, ButtonGroup, Col, Grid, Input, Checkbox, Row } from 'react-bootstrap'
+import { Button, ButtonGroup, Input, Checkbox } from 'react-bootstrap'
 
 import {
   fleetShipsIdSelectorFactory,
@@ -13,6 +13,7 @@ import {
   shipsSelector,
 } from 'views/utils/selectors'
 
+import ShipDropdown from './ship-dropdown'
 import scheduler from './scheduler'
 
 
@@ -117,7 +118,6 @@ const hasHourlyVoiceSelector = createSelector(
   }
 )
 
-
 // helper to convert a number into zero-filled string
 const zerofill = (n, len) => {
   // n: the number to fill with zeroes
@@ -129,7 +129,6 @@ const zerofill = (n, len) => {
   }
   return str
 }
-
 
 // vcKey is extracted from Core.swf/common.util.SoundUtil
 const vcKey = [604825, 607300, 613847, 615318, 624009,
@@ -197,7 +196,7 @@ const SecretaryArea = connect(
     nextHour.setMinutes(0)
     nextHour.setSeconds(0)
     nextHour.setMilliseconds(0)
-    scheduler.schedule(this.hourly_notify,
+    scheduler.schedule(this.hourlyNotify,
       {
         time: nextHour.getTime(),
         interval: 1000 * 60 * 60,
@@ -273,10 +272,10 @@ const SecretaryArea = connect(
   }
 
   handleHourlyVoiceClick = () => {
-    this.hourly_notify()
+    this.hourlyNotify()
   }
 
-  hourly_notify = (time = 0) => {
+  hourlyNotify = (time = 0) => {
     let nowHour = 0
     let ship_id
     // time: epoch time format, because scheduler will pass a current time arg
@@ -364,37 +363,37 @@ const SecretaryArea = connect(
     )
   }
 
+  handleSelect = (id) => {
+    config.set('plugin.secretary.ship', id)
+  }
+
   render() {
     return (
       <div id="secretary" className="secretary">
         <link rel="stylesheet" href={join(relative(ROOT, __dirname), 'assets', 'secretary.css')} />
-
-        <div className="divider">
-          <h5>{__('Notification secretary')}</h5>
-          <hr />
-        </div>
-        <Grid>
-          <Row>
-            <Col xs={12}>
+        <div>
+          <div>
+            <div>
               {this.renderOptions()}
-            </Col>
-          </Row>
-          <Row>
-            <Col xs={12}>
+              <ShipDropdown onSelect={this.handleSelect} />
+            </div>
+          </div>
+          <div>
+            <div>
               <Checkbox checked={this.props.enableHourlyVoice} onChange={this.handleSetHourlyVoice}>
                 {__("Play secretary's hourly voice when volume off")}
               </Checkbox>
-            </Col>
-          </Row>
-        </Grid>
+            </div>
+          </div>
+        </div>
 
         <div className="divider">
           <h5>{__('Test')}</h5>
           <hr />
         </div>
-        <Grid>
-          <Row>
-            <Col xs={12}>
+        <div>
+          <div>
+            <div>
               <ButtonGroup id="voice-test">
                 <Button
                   bsStyle="success"
@@ -417,8 +416,8 @@ const SecretaryArea = connect(
                 >{__('Morale')}
                 </Button>
               </ButtonGroup>
-            </Col>
-            <Col xs={4}>
+            </div>
+            <div xs={4}>
               <Button
                 style={{ width: '100%' }}
                 bsStyle={this.props.hasHourlyVoice && this.props.enableHourlyVoice ? 'success' : 'info'}
@@ -427,9 +426,9 @@ const SecretaryArea = connect(
               >
                 {__('Hourly Voice')}
               </Button>
-            </Col>
-          </Row>
-        </Grid>
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
