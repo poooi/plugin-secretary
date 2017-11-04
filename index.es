@@ -11,7 +11,6 @@ import {
   configSelector,
   constSelector,
   shipsSelector,
-  createDeepCompareArraySelector,
 } from 'views/utils/selectors'
 
 import scheduler from './scheduler'
@@ -145,23 +144,34 @@ const vcKey = [604825, 607300, 613847, 615318, 624009,
   852548, 858315, 867580, 875771, 879698,
   882759, 885564, 888837, 896168,
 ]
-const convertFilename = (shipId, voiceId) => {
-  return (((shipId + 7) * 17 * (vcKey[voiceId] - vcKey[voiceId - 1])) % 99173) + 100000
-}
+const convertFilename = (shipId, voiceId) =>
+  (((shipId + 7) * 17 * (vcKey[voiceId] - vcKey[voiceId - 1])) % 99173) + 100000
 
-const mapStateToProps = (state, props) => {
-  return {
+const SecretaryArea = connect(
+  state => ({
     notifySecretary: notifySecretaryIdSelector(state),
     fleetSecretary: fleetSecretaryIdSelector(state),
     ships: availableShipsSelector(state),
     shipgraph: shipgraphSelector(state),
     enableHourlyVoice: enableHoulyVoiceSelector(state),
     hasHourlyVoice: hasHourlyVoiceSelector(state),
+  })
+)(class SecretaryArea extends Component {
+  static propTypes = {
+    notifySecretary: PropTypes.number.isRequired,
+    fleetSecretary: PropTypes.number.isRequired,
+    ships: PropTypes.shape({
+      api_id: PropTypes.number,
+      api_name: PropTypes.string,
+      api_sortno: PropTypes.number,
+    }).isRequired,
+    shipgraph: PropTypes.shape({
+      api_id: PropTypes.number,
+      api_filename: PropTypes.string,
+    }).isRequired,
+    enableHourlyVoice: PropTypes.bool.isRequired,
+    hasHourlyVoice: PropTypes.bool.isRequired,
   }
-}
-
-
-class SecretaryArea extends Component {
 
   componentDidMount() {
     window.addEventListener('secretary.unload', this.pluginWillUnload)
@@ -169,8 +179,8 @@ class SecretaryArea extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    if (this.props.notifySecretary != nextProps.notifySecretary ||
-    this.props.fleetSecretary != nextProps.fleetSecretary) {
+    if (this.props.notifySecretary !== nextProps.notifySecretary ||
+    this.props.fleetSecretary !== nextProps.fleetSecretary) {
       const { notifySecretary, fleetSecretary } = nextProps
 
       this.updateNotifyConfig(notifySecretary || fleetSecretary)
@@ -212,38 +222,50 @@ class SecretaryArea extends Component {
       config.set(key, audio)
       const xhr = new XMLHttpRequest()
       xhr.open('GET', audio)
-      xhr.onabort = xhr.onerror = xhr.onload = (e) => {
-        if (xhr.status != 200) config.set(key, null)
+      xhr.onabort = xhr.onerror = xhr.onload = () => {
+        if (xhr.status !== 200) {
+          config.set(key, null)
+        }
       }
       xhr.send()
     }
 
 
-    if (ship_id <= 0) return
-    const admiral_id = parseInt(window._nickNameId) || 0
+    if (ship_id <= 0) {
+      return
+    }
+    const admiral_id = parseInt(window._nickNameId || 0, 10)
     const server = SERVERS[(ship_id + admiral_id) % SERVERS.length]
     let shipFilename
     if (this.props.shipgraph[ship_id] != null) {
       shipFilename = this.props.shipgraph[ship_id].api_filename
     }
-    if (!server) return
-    if (!shipFilename) return
+    if (!server) {
+      return
+    }
+    if (!shipFilename) {
+      return
+    }
     _.each(CONFIG, (id, key) => {
       const audioFN = convertFilename(ship_id, id)
-      if (Number.isNaN(audioFN)) return
+      if (Number.isNaN(audioFN)) {
+        return
+      }
       setConfig(key, `http://${server}/kcs/sound/kc${shipFilename}/${audioFN}.mp3`)
     })
   }
 
   handleShipChange = (e) => {
-    const ship_id = parseInt(e.target.value)
-    if (Number.isNaN(ship_id)) return
+    const ship_id = parseInt(e.target.value, 10)
+    if (Number.isNaN(ship_id)) {
+      return
+    }
     // Save secretary config
     config.set('plugin.secretary.ship', ship_id)
   }
 
   handleAudition = type => () => {
-    notify(null, { type: type })
+    notify(null, { type })
   }
 
   handleSetHourlyVoice = () => {
@@ -258,10 +280,18 @@ class SecretaryArea extends Component {
     let nowHour = 0
     let ship_id
     // time: epoch time format, because scheduler will pass a current time arg
-    if (!config.get('poi.content.muted', false)) return
-    if (!this.props.enableHourlyVoice) return
-    if (!this.props.hasHourlyVoice) return
-    if (this.props.notifySecretary < 0) return
+    if (!config.get('poi.content.muted', false)) {
+      return
+    }
+    if (!this.props.enableHourlyVoice) {
+      return
+    }
+    if (!this.props.hasHourlyVoice) {
+      return
+    }
+    if (this.props.notifySecretary < 0) {
+      return
+    }
 
     if (time) {
       nowHour = new Date(time).getHours()
@@ -276,18 +306,26 @@ class SecretaryArea extends Component {
       ship_id = this.props.fleetSecretary // if it is 0, use fleet secretary
     }
 
-    const admiral_id = parseInt(window._nickNameId) || 0
+    const admiral_id = parseInt(window._nickNameId || 0, 10)
     const server = SERVERS[(ship_id + admiral_id) % SERVERS.length]
     let shipFilename
     if (this.props.shipgraph[ship_id] != null) {
       shipFilename = this.props.shipgraph[ship_id].api_filename
     }
-    if (!server) return
-    if (!shipFilename) return
-    if (Number.isNaN(nowHour)) return
+    if (!server) {
+      return
+    }
+    if (!shipFilename) {
+      return
+    }
+    if (Number.isNaN(nowHour)) {
+      return
+    }
 
     const audioFN = convertFilename(ship_id, (nowHour + 30))
-    if (Number.isNaN(audioFN)) return
+    if (Number.isNaN(audioFN)) {
+      return
+    }
 
     notify(null, {
       audio: `http://${server}/kcs/sound/kc${shipFilename}/${audioFN}.mp3`,
@@ -296,7 +334,7 @@ class SecretaryArea extends Component {
 
   renderOptions = () => {
     const { ships, fleetSecretary } = this.props
-    const currentSecretary = _.find(ships, ship => ship.api_id == fleetSecretary)
+    const currentSecretary = _.find(ships, ship => ship.api_id === fleetSecretary)
     if (ships != null) {
       const options = []
       options.push(
@@ -306,7 +344,7 @@ class SecretaryArea extends Component {
           }
         </option>
       )
-      _.each(ships, (ship, i) => {
+      _.each(ships, (ship) => {
         if (ship) {
           options.push(
             <option key={ship.api_name} value={ship.api_id}>
@@ -391,26 +429,10 @@ class SecretaryArea extends Component {
       </div>
     )
   }
-}
-
-SecretaryArea.propTypes = {
-  notifySecretary: PropTypes.number.isRequired,
-  fleetSecretary: PropTypes.number.isRequired,
-  ships: PropTypes.shape({
-    api_id: PropTypes.number,
-    api_name: PropTypes.string,
-    api_sortno: PropTypes.number,
-  }).isRequired,
-  shipgraph: PropTypes.shape({
-    api_id: PropTypes.number,
-    api_filename: PropTypes.string,
-  }).isRequired,
-  enableHourlyVoice: PropTypes.bool.isRequired,
-  hasHourlyVoice: PropTypes.bool.isRequired,
-}
+})
 
 export const pluginWillUnload = () => {
   window.dispatchEvent(new Event('secretary.unload'))
 }
 
-export const reactClass = connect(mapStateToProps)(SecretaryArea)
+export const reactClass = SecretaryArea
