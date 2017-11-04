@@ -395,23 +395,27 @@ const SecretaryArea = connect(
         <Grid>
           <Row>
             <Col xs={12}>
-              <ButtonGroup id={'voice-test'}>
+              <ButtonGroup id="voice-test">
                 <Button
-                  bsStyle={'success'}
+                  bsStyle="success"
                   onClick={this.handleAudition('construction')}
-                >{__('Construction')}</Button>
+                >{__('Construction')}
+                </Button>
                 <Button
-                  bsStyle={'success'}
+                  bsStyle="success"
                   onClick={this.handleAudition('repair')}
-                >{__('Docking')}</Button>
+                >{__('Docking')}
+                </Button>
                 <Button
-                  bsStyle={'success'}
+                  bsStyle="success"
                   onClick={this.handleAudition('expedition')}
-                >{__('Expedition')}</Button>
+                >{__('Expedition')}
+                </Button>
                 <Button
-                  bsStyle={'success'}
+                  bsStyle="success"
                   onClick={this.handleAudition('morale')}
-                >{__('Morale')}</Button>
+                >{__('Morale')}
+                </Button>
               </ButtonGroup>
             </Col>
             <Col xs={4}>
