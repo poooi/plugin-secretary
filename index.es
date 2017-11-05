@@ -109,20 +109,17 @@ const hourlyNotify = (time = 0) => {
 
 // * Update notification config using audio of ship.
 // * Will fallback to default if an audio file is not found,
-const updateNotifyConfig = (shipId) => {
-  const setConfig = (key, audio) => {
+
+const setConfig = async (key, audio) => {
+  const resp = await fetch(audio)
+  if (resp.ok) {
     config.set(key, audio)
-    const xhr = new XMLHttpRequest()
-    xhr.open('GET', audio)
-    xhr.onabort = xhr.onerror = xhr.onload = () => {
-      if (xhr.status !== 200) {
-        config.set(key, null)
-      }
-    }
-    xhr.send()
+  } else {
+    config.set(key, null)
   }
+}
 
-
+const updateNotifyConfig = (shipId) => {
   if (shipId <= 0) {
     return
   }
