@@ -1,20 +1,25 @@
 import { createSelector } from 'reselect'
-import _, { get, keyBy, each, uniq, flatMap, values } from 'lodash'
-import fp from 'lodash/fp'
+import _, { get, keyBy } from 'lodash'
 import { toRomaji } from 'wanakana'
-import memoize from 'fast-memoize'
 
 const $shipsSelector = state => get(state, ['const', '$ships'], {})
 const graphsSelector = state => get(state, ['const', '$graphs']) || keyBy(get(state, ['const', '$shipgraph']), 'api_id')
 const fleetsSelector = state => get(state, ['info', 'fleets'], [])
 const shipsSelector = state => get(state, ['info', 'ships'], {})
 
-export const shipDataSelector = createSelector(
+const ourShipsSelector = createSelector(
   [
     $shipsSelector,
+  ], ships => _(ships)
+    .pickBy(({ api_sortno }) => Boolean(api_sortno))
+    .value()
+)
+
+export const shipDataSelector = createSelector(
+  [
+    ourShipsSelector,
     graphsSelector,
   ], (ships, graphs) => _(ships)
-    .pickBy(ship => Boolean(ship.api_sortno))
     .mapValues(ship => ({
       ...(graphs[ship.api_id] || {}),
       ...ship,
@@ -66,7 +71,7 @@ export const secretaryShipIdSelector = createSelector(
 
 const beforeShipMapSelector = createSelector(
   [
-    $shipsSelector,
+    ourShipsSelector,
   ], $ships => _($ships)
     .filter(ship => +(ship.api_aftershipid || 0) > 0)
     .map(ship => ([ship.api_aftershipid, ship.api_id]))
@@ -78,7 +83,7 @@ const beforeShipMapSelector = createSelector(
 // the adjustedRemodelChainsSelector will return complete chains for all ships
 const remodelChainsSelector = createSelector(
   [
-    $shipsSelector,
+    ourShipsSelector,
   ], $ships => _($ships)
     .mapValues(({ api_id: shipId }) => {
       let current = $ships[shipId]
@@ -89,50 +94,30 @@ const remodelChainsSelector = createSelector(
         current = $ships[next] || {}
         next = +(current.api_aftershipid || 0)
       }
-      return [shipId, same]
+      return same
     })
     .value()
 )
 
-
-export const sameShipMapSelector = createSelector(
+export const uniqueShipIdsSelector = createSelector(
   [
-    $shipsSelector,
-    remodelChainsSelector,
-  ], ($ships, remodelChains) => {
-    const sameMap = _($ships)
-      .map(({ api_id }) => remodelChains[api_id])
-      .fromPairs()
-      .value()
-
-    each(sameMap, ids =>
-      each(ids, (id) => {
-        sameMap[id] = uniq([...sameMap[id], ...ids, ...flatMap(ids, s => sameMap[s])])
-      })
-    )
-    return sameMap
-  })
-
-export const uniqueShipSelector = createSelector(
-  [
-    sameShipMapSelector,
-    $shipsSelector,
+    ourShipsSelector,
     beforeShipMapSelector,
-  ], (sameMap, $ships, beforeShipMap) =>
-    fp.flow(
-      fp.uniqBy(shipIds => Math.min(...shipIds)),
-      fp.map(shipIds => _(shipIds).find(id => !(id in beforeShipMap))),
-      fp.filter(shipId => Boolean(get($ships, [shipId, 'api_sortno']))), // we only want our girls
-    )(values(sameMap))
+  ], ($ships, beforeShipMap) => _($ships)
+    .filter(({ api_id }) => !(api_id in beforeShipMap))
+    .map(({ api_id }) => api_id)
+    .value()
 )
 
 export const shipUniqueMapSelector = createSelector(
   [
-    sameShipMapSelector,
-    beforeShipMapSelector,
-  ], (sameMap, beforeShipMap) => _(sameMap)
-    .mapValues(shipIds => _(shipIds).find(id => !(id in beforeShipMap)))
-    .pickBy(Boolean)
+    uniqueShipIdsSelector,
+    remodelChainsSelector,
+  ], (shipIds, chains) => _(shipIds)
+    .flatMap(shipId =>
+      _(chains[shipId]).map(id => ([id, shipId])).value()
+    )
+    .fromPairs()
     .value()
 )
 
@@ -141,6 +126,6 @@ export const adjustedRemodelChainsSelector = createSelector(
     remodelChainsSelector,
     shipUniqueMapSelector,
   ], (remodelChains, uniqueMap) => _(uniqueMap)
-    .mapValues(uniqueId => remodelChains[uniqueId][1])
+    .mapValues(uniqueId => remodelChains[uniqueId])
     .value()
 )
