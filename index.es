@@ -1,5 +1,5 @@
 import { relative, join } from 'path-extra'
-import _, { get } from 'lodash'
+import _, { get, sample } from 'lodash'
 import React, { PureComponent } from 'react'
 import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
@@ -93,7 +93,7 @@ const hourlyNotify = (time = 0) => {
     return
   }
 
-  const server = window._serverIp
+  const server = window._serverIp || sample(SERVERS)
   const shipFilename = ship.api_filename
   if (!server || !shipFilename) {
     return
@@ -127,7 +127,7 @@ const updateNotifyConfig = (shipId) => {
   }
   const state = window.getStore()
   const ships = shipDataSelector(state)
-  const server = window._serverIp
+  const server = window._serverIp || sample(SERVERS)
   const shipFilename = get(ships, [shipId, 'api_filename'])
   if (!server || !shipFilename) {
     return
