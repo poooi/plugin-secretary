@@ -2,6 +2,8 @@ import { createSelector } from 'reselect'
 import _, { get, keyBy } from 'lodash'
 import { toRomaji } from 'wanakana'
 
+import { configSelector } from 'views/utils/selectors'
+
 const $shipsSelector = state => get(state, ['const', '$ships'], {})
 const graphsSelector = state => get(state, ['const', '$graphs']) || keyBy(get(state, ['const', '$shipgraph']), 'api_id')
 const fleetsSelector = state => get(state, ['info', 'fleets'], [])
@@ -128,4 +130,14 @@ export const adjustedRemodelChainsSelector = createSelector(
   ], (remodelChains, uniqueMap) => _(uniqueMap)
     .mapValues(uniqueId => remodelChains[uniqueId])
     .value()
+)
+
+export const notifySecretaryIdSelector = createSelector(
+  [configSelector],
+  config => _.get(config, 'plugin.secretary.ship', 0)
+)
+
+export const enableHoulyVoiceSelector = createSelector(
+  [configSelector],
+  config => _.get(config, 'plugin.secretary.hourly_voice_enable', false)
 )

@@ -1,19 +1,17 @@
 import { relative, join } from 'path-extra'
-import _ from 'lodash'
-import React, { Component } from 'react'
+import _, { get } from 'lodash'
+import React, { PureComponent } from 'react'
 import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
-import { createSelector } from 'reselect'
 import { Button, ButtonGroup, Input, Checkbox } from 'react-bootstrap'
 
-import {
-  fleetShipsIdSelectorFactory,
-  configSelector,
-  constSelector,
-  shipsSelector,
-} from 'views/utils/selectors'
-
 import ShipDropdown from './ship-dropdown'
+import {
+  notifySecretaryIdSelector,
+  enableHoulyVoiceSelector,
+  shipDataSelector,
+  secretaryShipIdSelector,
+} from './selectors'
 import scheduler from './scheduler'
 
 
@@ -55,81 +53,6 @@ const CONFIG = {
   'plugin.prophet.notify.damagedAudio': 21,
 }
 
-
-//
-// Selectors
-//
-
-
-const fleetSecretaryIdSelector = createSelector(
-  [
-    fleetShipsIdSelectorFactory(0),
-    shipsSelector,
-  ],
-  (shipId, ships) => {
-    if (shipId && ships && _.get(shipId, 0) && _.get(ships, shipId[0])) {
-      return (ships[shipId[0]] || {}).api_ship_id || 0
-      // case 0 will be covered in updateNotifyConfig
-    }
-    return 0
-  }
-)
-
-const notifySecretaryIdSelector = createSelector(
-  [configSelector],
-  config => _.get(config, 'plugin.secretary.ship', 0)
-)
-
-const enableHoulyVoiceSelector = createSelector(
-  [configSelector],
-  config => _.get(config, 'plugin.secretary.hourly_voice_enable', false)
-)
-
-const availableShipsSelector = createSelector(
-  [constSelector],
-  ({ $ships }) => {
-    const availableShips = _.map($ships, ship => _.pick(ship, ['api_id', 'api_name', 'api_sortno']))
-    _.remove(availableShips, ship => !ship.api_sortno)
-    return _.keyBy(availableShips, 'api_sortno')
-  }
-)
-
-const shipgraphSelector = createSelector(
-  [constSelector],
-  ({ $shipgraph }) => {
-    const shipgraph = _.map($shipgraph, ship => _.pick(ship, ['api_id', 'api_filename']))
-    return _.keyBy(shipgraph, 'api_id')
-  }
-)
-
-const hasHourlyVoiceSelector = createSelector(
-  [
-    constSelector,
-    fleetSecretaryIdSelector,
-    notifySecretaryIdSelector,
-  ],
-  ({ $ships, $shipgraph }, fleetSecretaryId, notifySecretaryId) => {
-    const shipId = notifySecretaryId || fleetSecretaryId
-    const ship = ($ships || {})[shipId]
-    if (ship != null) {
-      return ship.api_voicef > 1
-    }
-    return false // default value
-  }
-)
-
-// helper to convert a number into zero-filled string
-const zerofill = (n, len) => {
-  // n: the number to fill with zeroes
-  // len: the length to fill
-  const pad = new Array(len).fill(0).join('')
-  const str = n.toString()
-  if (str.length < len) {
-    return (pad + str).slice(-len)
-  }
-  return str
-}
-
 // vcKey is extracted from Core.swf/common.util.SoundUtil
 const vcKey = [604825, 607300, 613847, 615318, 624009,
   631856, 635451, 637218, 640529, 643036,
@@ -143,19 +66,91 @@ const vcKey = [604825, 607300, 613847, 615318, 624009,
   852548, 858315, 867580, 875771, 879698,
   882759, 885564, 888837, 896168,
 ]
+
 const convertFilename = (shipId, voiceId) =>
   (((shipId + 7) * 17 * (vcKey[voiceId] - vcKey[voiceId - 1])) % 99173) + 100000
+
+
+const hourlyNotify = (time = 0) => {
+  const nowHour = time
+    ? new Date(time).getHours()
+    : new Date().getHours()
+
+  const state = window.getStore()
+
+  const shipData = shipDataSelector(state)
+  // if it is 0, use fleet secretary
+  const ship = get(shipData, notifySecretaryIdSelector(state) || secretaryShipIdSelector(state))
+  // time: epoch time format, because scheduler will pass a current time arg
+  if (
+    !config.get('poi.content.muted', false) ||
+    enableHoulyVoiceSelector(state) ||
+    !ship ||
+    ship.api_voicef <= 0
+  ) {
+    return
+  }
+
+  const server = window._serverIp
+  const shipFilename = ship.api_filename
+  if (!server || !shipFilename) {
+    return
+  }
+
+  const audioFN = convertFilename(ship.api_id, (nowHour + 30))
+  if (Number.isNaN(audioFN)) {
+    return
+  }
+
+  notify(null, {
+    audio: `http://${server}/kcs/sound/kc${shipFilename}/${audioFN}.mp3`,
+  })
+}
+
+// * Update notification config using audio of ship.
+// * Will fallback to default if an audio file is not found,
+const updateNotifyConfig = (shipId) => {
+  const setConfig = (key, audio) => {
+    config.set(key, audio)
+    const xhr = new XMLHttpRequest()
+    xhr.open('GET', audio)
+    xhr.onabort = xhr.onerror = xhr.onload = () => {
+      if (xhr.status !== 200) {
+        config.set(key, null)
+      }
+    }
+    xhr.send()
+  }
+
+
+  if (shipId <= 0) {
+    return
+  }
+  const state = window.getStore()
+  const ships = shipDataSelector(state)
+  const server = window._serverIp
+  const shipFilename = get(ships, [shipId, 'api_filename'])
+  if (!server || !shipFilename) {
+    return
+  }
+
+  _.each(CONFIG, (id, key) => {
+    const audioFN = convertFilename(shipId, id)
+    if (Number.isNaN(audioFN)) {
+      return
+    }
+    setConfig(key, `http://${server}/kcs/sound/kc${shipFilename}/${audioFN}.mp3`)
+  })
+}
 
 const SecretaryArea = connect(
   state => ({
     notifySecretary: notifySecretaryIdSelector(state),
-    fleetSecretary: fleetSecretaryIdSelector(state),
-    ships: availableShipsSelector(state),
-    shipgraph: shipgraphSelector(state),
+    fleetSecretary: secretaryShipIdSelector(state),
+    ships: shipDataSelector(state),
     enableHourlyVoice: enableHoulyVoiceSelector(state),
-    hasHourlyVoice: hasHourlyVoiceSelector(state),
   })
-)(class SecretaryArea extends Component {
+)(class SecretaryArea extends PureComponent {
   static propTypes = {
     notifySecretary: PropTypes.number.isRequired,
     fleetSecretary: PropTypes.number.isRequired,
@@ -164,103 +159,16 @@ const SecretaryArea = connect(
       api_name: PropTypes.string,
       api_sortno: PropTypes.number,
     }).isRequired,
-    shipgraph: PropTypes.shape({
-      api_id: PropTypes.number,
-      api_filename: PropTypes.string,
-    }).isRequired,
     enableHourlyVoice: PropTypes.bool.isRequired,
-    hasHourlyVoice: PropTypes.bool.isRequired,
   }
 
-  componentDidMount() {
-    window.addEventListener('secretary.unload', this.pluginWillUnload)
-    this.pluginDidLoad()
-  }
+  componentDidUpdate = (prevProps) => {
+    if (this.props.notifySecretary !== prevProps.notifySecretary ||
+    this.props.fleetSecretary !== prevProps.fleetSecretary) {
+      const { notifySecretary, fleetSecretary } = this.props
 
-  componentWillReceiveProps(nextProps) {
-    if (this.props.notifySecretary !== nextProps.notifySecretary ||
-    this.props.fleetSecretary !== nextProps.fleetSecretary) {
-      const { notifySecretary, fleetSecretary } = nextProps
-
-      this.updateNotifyConfig(notifySecretary || fleetSecretary)
+      updateNotifyConfig(notifySecretary || fleetSecretary)
     }
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('secretary.unload', this.pluginWillUnload)
-  }
-
-  pluginDidLoad = () => {
-    const nextHour = new Date()
-    nextHour.setHours(nextHour.getHours() + 1)
-    nextHour.setMinutes(0)
-    nextHour.setSeconds(0)
-    nextHour.setMilliseconds(0)
-    scheduler.schedule(this.hourlyNotify,
-      {
-        time: nextHour.getTime(),
-        interval: 1000 * 60 * 60,
-        allowImmediate: true,
-      })
-    const shipId = config.get('plugin.secretary.ship', 0)
-    this.updateNotifyConfig(shipId)
-  }
-
-  pluginWillUnload = () => {
-    _.each(CONFIG, (id, key) => {
-      config.set(key)
-    })
-    scheduler._tasks = []
-  }
-
-
-  // * Update notification config using audio of ship.
-  // * Will fallback to default if an audio file is not found,
-  updateNotifyConfig = (ship_id) => {
-    const setConfig = (key, audio) => {
-      config.set(key, audio)
-      const xhr = new XMLHttpRequest()
-      xhr.open('GET', audio)
-      xhr.onabort = xhr.onerror = xhr.onload = () => {
-        if (xhr.status !== 200) {
-          config.set(key, null)
-        }
-      }
-      xhr.send()
-    }
-
-
-    if (ship_id <= 0) {
-      return
-    }
-    const admiral_id = parseInt(window._nickNameId || 0, 10)
-    const server = SERVERS[(ship_id + admiral_id) % SERVERS.length]
-    let shipFilename
-    if (this.props.shipgraph[ship_id] != null) {
-      shipFilename = this.props.shipgraph[ship_id].api_filename
-    }
-    if (!server) {
-      return
-    }
-    if (!shipFilename) {
-      return
-    }
-    _.each(CONFIG, (id, key) => {
-      const audioFN = convertFilename(ship_id, id)
-      if (Number.isNaN(audioFN)) {
-        return
-      }
-      setConfig(key, `http://${server}/kcs/sound/kc${shipFilename}/${audioFN}.mp3`)
-    })
-  }
-
-  handleShipChange = (e) => {
-    const ship_id = parseInt(e.target.value, 10)
-    if (Number.isNaN(ship_id)) {
-      return
-    }
-    // Save secretary config
-    config.set('plugin.secretary.ship', ship_id)
   }
 
   handleAudition = type => () => {
@@ -272,95 +180,7 @@ const SecretaryArea = connect(
   }
 
   handleHourlyVoiceClick = () => {
-    this.hourlyNotify()
-  }
-
-  hourlyNotify = (time = 0) => {
-    let nowHour = 0
-    let ship_id
-    // time: epoch time format, because scheduler will pass a current time arg
-    if (!config.get('poi.content.muted', false)) {
-      return
-    }
-    if (!this.props.enableHourlyVoice) {
-      return
-    }
-    if (!this.props.hasHourlyVoice) {
-      return
-    }
-    if (this.props.notifySecretary < 0) {
-      return
-    }
-
-    if (time) {
-      nowHour = new Date(time).getHours()
-    } else {
-      nowHour = new Date().getHours()
-    }
-
-
-    if (this.props.notifySecretary) {
-      ship_id = this.props.notifySecretary
-    } else {
-      ship_id = this.props.fleetSecretary // if it is 0, use fleet secretary
-    }
-
-    const admiral_id = parseInt(window._nickNameId || 0, 10)
-    const server = SERVERS[(ship_id + admiral_id) % SERVERS.length]
-    let shipFilename
-    if (this.props.shipgraph[ship_id] != null) {
-      shipFilename = this.props.shipgraph[ship_id].api_filename
-    }
-    if (!server) {
-      return
-    }
-    if (!shipFilename) {
-      return
-    }
-    if (Number.isNaN(nowHour)) {
-      return
-    }
-
-    const audioFN = convertFilename(ship_id, (nowHour + 30))
-    if (Number.isNaN(audioFN)) {
-      return
-    }
-
-    notify(null, {
-      audio: `http://${server}/kcs/sound/kc${shipFilename}/${audioFN}.mp3`,
-    })
-  }
-
-  renderOptions = () => {
-    const { ships, fleetSecretary } = this.props
-    const currentSecretary = _.find(ships, ship => ship.api_id === fleetSecretary)
-    if (ships != null) {
-      const options = []
-      options.push(
-        <option key={0} value={0}>
-          {__('Current secretary')}: {
-            currentSecretary ? __r(currentSecretary.api_name) : __('Unknown')
-          }
-        </option>
-      )
-      _.each(ships, (ship) => {
-        if (ship) {
-          options.push(
-            <option key={ship.api_name} value={ship.api_id}>
-              No.{zerofill(ship.api_sortno, 4)} {__r(ship.api_name)}
-            </option>)
-        }
-      })
-      return (
-        <Input type="select" value={this.props.notifySecretary} onChange={this.handleShipChange}>
-          {options}
-        </Input>)
-    }
-    return (
-      <Input type="select" value={0} disabled>
-        <option key={0} value={0}>{__('Not logged in')}</option>
-      </Input>
-    )
+    hourlyNotify()
   }
 
   handleSelect = (id) => {
@@ -368,13 +188,16 @@ const SecretaryArea = connect(
   }
 
   render() {
+    const {
+      ships, fleetSecretary, notifySecretary, enableHourlyVoice,
+    } = this.props
+    const hasHourlyVoice = get(ships, [notifySecretary || fleetSecretary, 'api_voicef']) > 0
     return (
       <div id="secretary" className="secretary">
         <link rel="stylesheet" href={join(relative(ROOT, __dirname), 'assets', 'secretary.css')} />
         <div>
           <div>
             <div>
-              {this.renderOptions()}
               <ShipDropdown onSelect={this.handleSelect} />
             </div>
           </div>
@@ -420,8 +243,8 @@ const SecretaryArea = connect(
             <div xs={4}>
               <Button
                 style={{ width: '100%' }}
-                bsStyle={this.props.hasHourlyVoice && this.props.enableHourlyVoice ? 'success' : 'info'}
-                disabled={!this.props.hasHourlyVoice || !this.props.enableHourlyVoice}
+                bsStyle={hasHourlyVoice && enableHourlyVoice ? 'success' : 'info'}
+                disabled={!hasHourlyVoice || !enableHourlyVoice}
                 onClick={this.handleHourlyVoiceClick}
               >
                 {__('Hourly Voice')}
@@ -435,7 +258,26 @@ const SecretaryArea = connect(
 })
 
 export const pluginWillUnload = () => {
-  window.dispatchEvent(new Event('secretary.unload'))
+  _.each(CONFIG, (id, key) => {
+    config.set(key)
+  })
+  scheduler._tasks = []
+}
+
+export const pluginDidLoad = () => {
+  const nextHour = new Date()
+  nextHour.setHours(nextHour.getHours() + 1)
+  nextHour.setMinutes(0)
+  nextHour.setSeconds(0)
+  nextHour.setMilliseconds(0)
+  scheduler.schedule(hourlyNotify,
+    {
+      time: nextHour.getTime(),
+      interval: 1000 * 60 * 60,
+      allowImmediate: true,
+    })
+  const shipId = config.get('plugin.secretary.ship', 0)
+  updateNotifyConfig(shipId)
 }
 
 export const reactClass = SecretaryArea
