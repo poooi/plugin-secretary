@@ -72,7 +72,7 @@ const vcKey = [604825, 607300, 613847, 615318, 624009,
 const convertFilename = (shipId, voiceId) =>
   (((shipId + 7) * 17 * (vcKey[voiceId] - vcKey[voiceId - 1])) % 99173) + 100000
 
-
+// time: epoch time format, because scheduler will pass a current time arg
 const hourlyNotify = (time = 0) => {
   const nowHour = time
     ? new Date(time).getHours()
@@ -83,10 +83,9 @@ const hourlyNotify = (time = 0) => {
   const shipData = shipDataSelector(state)
   // if it is 0, use fleet secretary
   const ship = get(shipData, notifySecretaryIdSelector(state) || secretaryShipIdSelector(state))
-  // time: epoch time format, because scheduler will pass a current time arg
   if (
     !config.get('poi.content.muted', false) ||
-    enableHoulyVoiceSelector(state) ||
+    !enableHoulyVoiceSelector(state) ||
     !ship ||
     ship.api_voicef <= 0
   ) {
