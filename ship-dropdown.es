@@ -188,7 +188,7 @@ const Menu = connect(
                 />
                 <InputGroup.Button>
                   <Button onClick={this.handleClear} bsStyle="danger">{__('Clear')}</Button>
-                  <Button bsStyle="primary" onClick={this.handleConfirmCustom}>{__('Use flagship')}</Button>
+                  <Button bsStyle="primary" onClick={this.handleConfirmCustom}>{__('Set secretary')}</Button>
                 </InputGroup.Button>
               </InputGroup>
             </FormGroup>

@@ -3,7 +3,8 @@ import _, { get } from 'lodash'
 import React, { PureComponent } from 'react'
 import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
-import { Button, ButtonGroup, Input, Checkbox } from 'react-bootstrap'
+import { Button, ButtonGroup, Label, Checkbox } from 'react-bootstrap'
+import cls from 'classnames'
 
 import ShipDropdown from './ship-dropdown'
 import {
@@ -11,6 +12,7 @@ import {
   enableHoulyVoiceSelector,
   shipDataSelector,
   secretaryShipIdSelector,
+  adjustedRemodelChainsSelector,
 } from './selectors'
 import scheduler from './scheduler'
 
@@ -146,6 +148,7 @@ const SecretaryArea = connect(
     fleetSecretary: secretaryShipIdSelector(state),
     ships: shipDataSelector(state),
     enableHourlyVoice: enableHoulyVoiceSelector(state),
+    remodelChains: adjustedRemodelChainsSelector(state),
   })
 )(class SecretaryArea extends PureComponent {
   static propTypes = {
@@ -157,6 +160,7 @@ const SecretaryArea = connect(
       api_sortno: PropTypes.number,
     }).isRequired,
     enableHourlyVoice: PropTypes.bool.isRequired,
+    remodelChains: PropTypes.objectOf(PropTypes.array).isRequired,
   }
 
   componentDidUpdate = (prevProps) => {
@@ -184,18 +188,47 @@ const SecretaryArea = connect(
     config.set('plugin.secretary.ship', id)
   }
 
+  handleAltSelect = id => () => this.handleSelect(id)
+
   render() {
     const {
-      ships, fleetSecretary, notifySecretary, enableHourlyVoice,
+      ships, fleetSecretary, notifySecretary, enableHourlyVoice, remodelChains,
     } = this.props
-    const hasHourlyVoice = get(ships, [notifySecretary || fleetSecretary, 'api_voicef']) > 0
+    const ship = get(ships, notifySecretary || fleetSecretary, {})
+    const chain = get(remodelChains, notifySecretary || fleetSecretary)
+    const hasHourlyVoice = get(ship, ['api_voicef']) > 0
     return (
       <div id="secretary" className="secretary">
         <link rel="stylesheet" href={join(relative(ROOT, __dirname), 'assets', 'secretary.css')} />
         <div>
           <div>
-            <div>
+            <div className="title">
               <ShipDropdown onSelect={this.handleSelect} />
+              <div className="ship-name">
+                { !notifySecretary && <span style={{ marginRight: '1ex' }}>{__('Current secretary')}</span>}
+                <span>{__r(ship.api_name || '')}</span>
+                {
+                  hasHourlyVoice &&
+                  <Label>{__('Hourly Voice')}</Label>
+                }
+              </div>
+            </div>
+            <div className="alt-select">
+              {
+                _(chain)
+                .map(shipId => (
+                  <div
+                    key={shipId}
+                    tabIndex="0"
+                    role="button"
+                    className={cls('select-item', { selected: shipId === ship.api_id })}
+                    onClick={this.handleAltSelect(shipId)}
+                  >
+                    {__r(get(ships, [shipId, 'api_name'], ''))}
+                  </div>
+                ))
+                .value()
+              }
             </div>
           </div>
           <div>
