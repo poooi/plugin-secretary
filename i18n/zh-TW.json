@@ -15,5 +15,15 @@
   "It's %s now": "現在時間是 %s",
   "Hourly Voice": "報時語音",
   "Play secretary's hourly voice when volume off": "在關閉遊戲聲音時播放祕書艦報時語音",
-  "": ""
+  "Set secretary": "祕書艦",
+  "All": "所有",
+  "DD": "驅逐艦",
+  "CL": "輕巡·雷巡",
+  "CA": "重巡·航巡",
+  "BB": "戰艦",
+  "CV": "航空母艦",
+  "SS": "潛水艦",
+  "Others": "別的艦娘",
+  "Clear": "清空",
+  "Search": "搜索"
 }

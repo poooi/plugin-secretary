@@ -15,5 +15,15 @@
   "It's %s now": "%s です",
   "Hourly Voice": "時報ボイス",
   "Play secretary's hourly voice when volume off": "ボリュームがオフの時に秘書艦の時報ボイスを再生する",
-  "": ""
+  "Set secretary": "秘書艦",
+  "All": "すべて",
+  "DD": "駆逐艦",
+  "CL": "軽巡·雷巡",
+  "CA": "重巡·航巡",
+  "BB": "戦艦",
+  "CV": "航空母艦",
+  "SS": "潜水艦",
+  "Others": "その他",
+  "Clear": "引き払う",
+  "Search": "検索"
 }
