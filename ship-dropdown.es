@@ -124,7 +124,11 @@ const Menu = connect(
   }
 
   componentWillReceiveProps = (nextProps) => {
-    this.fuse.setCollection(values(nextProps.ships))
+    if ((nextProps.open || this.props.open !== nextProps.open) &&
+      values(this.props.ships).length !== values(nextProps.ships).length
+    ) {
+      this.fuse.list = values(nextProps.ships)
+    }
   }
 
   shouldComponentUpdate = nextProps =>
