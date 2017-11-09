@@ -120,12 +120,13 @@ const setConfig = async (key, audio) => {
   }
 }
 
-const updateNotifyConfig = (shipId) => {
-  if (shipId <= 0) {
+const updateNotifyConfig = (_shipId) => {
+  if (_shipId < 0) {
     return
   }
   const state = window.getStore()
   const ships = shipDataSelector(state)
+  const shipId = _shipId || secretaryShipIdSelector(state)
   const server = window._serverIp || sample(SERVERS)
   const shipFilename = get(ships, [shipId, 'api_filename'])
   if (!server || !shipFilename) {
