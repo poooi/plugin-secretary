@@ -87,7 +87,7 @@ const hourlyNotify = (time = 0) => {
     !config.get('poi.content.muted', false) ||
     !enableHoulyVoiceSelector(state) ||
     !ship ||
-    ship.api_voicef <= 0
+    ship.api_voicef <= 1
   ) {
     return
   }
@@ -196,7 +196,7 @@ const SecretaryArea = connect(
     } = this.props
     const ship = get(ships, notifySecretary || fleetSecretary, {})
     const chain = get(remodelChains, notifySecretary || fleetSecretary)
-    const hasHourlyVoice = get(ship, ['api_voicef']) > 0
+    const hasHourlyVoice = get(ship, ['api_voicef']) > 1
     return (
       <div id="secretary" className="secretary">
         <link rel="stylesheet" href={join(relative(ROOT, __dirname), 'assets', 'secretary.css')} />
