@@ -22,17 +22,15 @@
     "url": "https://github.com/poooi/plugin-secretary/issues"
   },
   "homepage": "https://github.com/poooi/plugin-secretary",
-  "dependencies": {
-    "wanakana": "^2.3.1"
-  },
+  "dependencies": {},
   "devDependencies": {
-    "babel-eslint": "^8.0.1",
-    "eslint": "^4.10.0",
+    "babel-eslint": "^8.0.3",
+    "eslint": "^4.13.1",
     "eslint-config-airbnb": "^16.1.0",
     "eslint-plugin-import": "^2.8.0",
-    "eslint-plugin-jsx-a11y": "^6.0.2",
-    "eslint-plugin-react": "^7.4.0",
-    "poi-util-transpile": "^7.6.2"
+    "eslint-plugin-jsx-a11y": "^6.0.3",
+    "eslint-plugin-react": "^7.5.1",
+    "poi-util-transpile": "^8.0.0"
   },
   "poiPlugin": {
     "title": "Secretary",
@@ -40,7 +38,8 @@
     "icon": "fa/file-audio-o",
     "priority": 8,
     "apiVer": {
-      "7.5.99": "0.7.1"
+      "7.5.99": "0.7.1",
+      "7.99.99": "2.0.1"
     }
   }
 }
