@@ -6,25 +6,26 @@ module.exports = {
   },
   'extends': [
     "airbnb",
+    "prettier",
+    "prettier/react",
     "poi-plugin",
   ],
   'parser': 'babel-eslint',
   'plugins': [
     'import',
     'react',
+    'prettier',
   ],
   'globals': {
     "window": false,
     "config": false,
   },
   'rules': {
-    'semi': ['error', 'never'],
     'import/no-unresolved': [2, { 'ignore': ['views/.*'] }],
     'react/jsx-filename-extension': 'off',
     'no-underscore-dangle': ['error', { 'allow': ['__'], 'allowAfterThis': true }],
     'import/extensions': ['error', { 'es': 'never' }],
     'import/no-extraneous-dependencies': 'off',
-    'comma-dangle': ['error', 'always-multiline'],
     'camelcase': 'off',
     'no-confusing-arrow': 'off',
     'react/require-default-props': 'off',
@@ -34,6 +35,7 @@ module.exports = {
     'react/no-multi-comp': 'off',
     'react/forbid-prop-types': 'off',
     'no-underscore-dangle': 'off',
+    "prettier/prettier": "error",
   },
   'settings': {
     'import/resolver': {

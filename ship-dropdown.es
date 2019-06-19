@@ -1,19 +1,9 @@
 import React, { Component } from 'react'
 import propTypes from 'prop-types'
-import {
-  Button,
-  Classes,
-  InputGroup,
-  Intent,
-  Tab,
-  Tabs,
-  Tag,
-} from '@blueprintjs/core'
+import { Button, Classes, InputGroup, Intent, Tab, Tabs, Tag } from '@blueprintjs/core'
 import { connect } from 'react-redux'
 import cls from 'classnames'
-import _, {
-  values, padStart, map, size,
-} from 'lodash'
+import _, { values, padStart, map, size } from 'lodash'
 import Fuse from 'fuse.js'
 import FA from 'react-fontawesome'
 import { Popover } from 'views/components/etc/overlay'
@@ -21,11 +11,7 @@ import styled from 'styled-components'
 import { withTranslation } from 'react-i18next'
 import { compose } from 'redux'
 
-import {
-  shipDataSelector,
-  shipUniqueMapSelector,
-  adjustedRemodelChainsSelector,
-} from './selectors'
+import { shipDataSelector, shipUniqueMapSelector, adjustedRemodelChainsSelector } from './selectors'
 
 // ship types dated 20170106, beginning with id=1
 // const shipTypes = ["海防艦", "駆逐艦", "軽巡洋艦", "重雷装巡洋艦",
@@ -147,14 +133,14 @@ const Menu = compose(
       type: 'all',
     }
 
-    componentDidUpdate = (prevProps) => {
+    componentDidUpdate = prevProps => {
       if (size(this.props.ships) !== size(prevProps.ships)) {
         this.fuse.list = values(this.props.ships)
         this.forceUpdate()
       }
     }
 
-    handleQueryChange = (e) => {
+    handleQueryChange = e => {
       this.setState({
         query: e.target.value,
       })
@@ -185,9 +171,7 @@ const Menu = compose(
 
     render() {
       const { query } = this.state
-      const {
-        ships, uniqueMap, remodelChains, t,
-      } = this.props
+      const { ships, uniqueMap, remodelChains, t } = this.props
 
       const filtered = _(this.fuse.search(query))
         .map(Number)
@@ -198,15 +182,11 @@ const Menu = compose(
             value={query}
             placeholder={t('Search')}
             onChange={this.handleQueryChange}
-            rightElement={(
-              <Button
-                minimal
-                onClick={this.handleClear}
-                intent={Intent.WARNING}
-              >
+            rightElement={
+              <Button minimal onClick={this.handleClear} intent={Intent.WARNING}>
                 <FA name="times" />
               </Button>
-)}
+            }
           />
 
           <Tabs vertical id="ship-selection" renderActiveTabPanelOnly>
@@ -215,52 +195,48 @@ const Menu = compose(
                 key={type}
                 id={type}
                 title={t(name)}
-                panel={(
+                panel={
                   <ShipList className="ship-info-scrollable">
                     {_(ships)
                       .filter(
-                        ship => !catMap[type]
-                          || (catMap[type] || []).includes(ship.api_stype),
+                        ship => !catMap[type] || (catMap[type] || []).includes(ship.api_stype),
                       )
-                      .filter(
-                        ship => !query || (filtered || []).includes(ship.api_id),
-                      )
+                      .filter(ship => !query || (filtered || []).includes(ship.api_id))
                       .sortBy([
                         ship => (filtered || []).indexOf(ship.api_id),
                         ship => ship.api_stype,
                         ship => ship.api_ctype,
                         ship => uniqueMap[ship.api_id],
-                        ship => (remodelChains[ship.api_id] || []).indexOf(
-                          ship.api_id,
-                        ),
+                        ship => (remodelChains[ship.api_id] || []).indexOf(ship.api_id),
                       ])
                       .map(ship => (
                         <ShipItem
-                          className={cls(
-                            Classes.POPOVER_DISMISS,
-                            Classes.MENU_ITEM,
-                          )}
+                          className={cls(Classes.POPOVER_DISMISS, Classes.MENU_ITEM)}
                           key={ship.api_id}
                           onClick={this.handleSelect(ship.api_id)}
                         >
                           <ShipId>{padStart(ship.api_sortno, 4, '0')}</ShipId>
-                          <ShipName>
-                            {window.i18n.resources.__(ship.api_name || '')}
-                          </ShipName>
+                          <ShipName>{window.i18n.resources.__(ship.api_name || '')}</ShipName>
                           {ship.api_voicef > 1 && (
-                          <Tag intent={Intent.PRIMARY}>
-                            <FA name="clock-o" />
-                          </Tag>
+                            <Tag intent={Intent.PRIMARY}>
+                              <FA name="clock-o" />
+                            </Tag>
                           )}
                         </ShipItem>
                       ))
                       .value()}
                   </ShipList>
-)}
+                }
               />
             ))}
             <Tabs.Expander />
-            <Button onClick={this.handleConfirmCustom} minimal className={cls(Classes.POPOVER_DISMISS, Classes.TAB)}>{t('Current secretary')}</Button>
+            <Button
+              onClick={this.handleConfirmCustom}
+              minimal
+              className={cls(Classes.POPOVER_DISMISS, Classes.TAB)}
+            >
+              {t('Current secretary')}
+            </Button>
           </Tabs>
         </Wrapper>
       )

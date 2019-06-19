@@ -16,13 +16,11 @@ import {
 } from './selectors'
 import scheduler from './scheduler'
 
-
 const { ROOT, notify } = window
 
 // i18n
 const __ = window.i18n['poi-plugin-secretary'].__.bind(window.i18n['poi-plugin-secretary'])
 const __r = window.i18n.resources.__.bind(window.i18n.resources)
-
 
 // constants
 // sorting ip: _.sortBy(Object.keys(servers), _.range(4).map(i => ip => +(ip.split('.')[i])))
@@ -58,17 +56,61 @@ const CONFIG = {
 }
 
 // vcKey is extracted from Core.swf/common.util.SoundUtil
-const vcKey = [604825, 607300, 613847, 615318, 624009,
-  631856, 635451, 637218, 640529, 643036,
-  652687, 658008, 662481, 669598, 675545,
-  685034, 687703, 696444, 702593, 703894,
-  711191, 714166, 720579, 728970, 738675,
-  740918, 743009, 747240, 750347, 759846,
-  764051, 770064, 773457, 779858, 786843,
-  790526, 799973, 803260, 808441, 816028,
-  825381, 827516, 832463, 837868, 843091,
-  852548, 858315, 867580, 875771, 879698,
-  882759, 885564, 888837, 896168,
+const vcKey = [
+  604825,
+  607300,
+  613847,
+  615318,
+  624009,
+  631856,
+  635451,
+  637218,
+  640529,
+  643036,
+  652687,
+  658008,
+  662481,
+  669598,
+  675545,
+  685034,
+  687703,
+  696444,
+  702593,
+  703894,
+  711191,
+  714166,
+  720579,
+  728970,
+  738675,
+  740918,
+  743009,
+  747240,
+  750347,
+  759846,
+  764051,
+  770064,
+  773457,
+  779858,
+  786843,
+  790526,
+  799973,
+  803260,
+  808441,
+  816028,
+  825381,
+  827516,
+  832463,
+  837868,
+  843091,
+  852548,
+  858315,
+  867580,
+  875771,
+  879698,
+  882759,
+  885564,
+  888837,
+  896168,
 ]
 
 const convertFilename = (shipId, voiceId) =>
@@ -76,9 +118,7 @@ const convertFilename = (shipId, voiceId) =>
 
 // time: epoch time format, because scheduler will pass a current time arg
 const hourlyNotify = (time = 0) => {
-  const nowHour = time
-    ? new Date(time).getHours()
-    : new Date().getHours()
+  const nowHour = time ? new Date(time).getHours() : new Date().getHours()
 
   const state = window.getStore()
 
@@ -100,7 +140,7 @@ const hourlyNotify = (time = 0) => {
     return
   }
 
-  const audioFN = convertFilename(ship.api_id, (nowHour + 30))
+  const audioFN = convertFilename(ship.api_id, nowHour + 30)
   if (Number.isNaN(audioFN)) {
     return
   }
@@ -122,7 +162,7 @@ const setConfig = async (key, audio) => {
   }
 }
 
-const updateNotifyConfig = (_shipId) => {
+const updateNotifyConfig = _shipId => {
   if (_shipId < 0) {
     return
   }
@@ -144,150 +184,151 @@ const updateNotifyConfig = (_shipId) => {
   })
 }
 
-const SecretaryArea = connect(
-  state => ({
-    notifySecretary: notifySecretaryIdSelector(state),
-    fleetSecretary: secretaryShipIdSelector(state),
-    ships: shipDataSelector(state),
-    enableHourlyVoice: enableHoulyVoiceSelector(state),
-    remodelChains: adjustedRemodelChainsSelector(state),
-  })
-)(class SecretaryArea extends PureComponent {
-  static propTypes = {
-    notifySecretary: PropTypes.number.isRequired,
-    fleetSecretary: PropTypes.number.isRequired,
-    ships: PropTypes.shape({
-      api_id: PropTypes.number,
-      api_name: PropTypes.string,
-      api_sortno: PropTypes.number,
-    }).isRequired,
-    enableHourlyVoice: PropTypes.bool.isRequired,
-    remodelChains: PropTypes.objectOf(PropTypes.array).isRequired,
-  }
-
-  componentDidUpdate = (prevProps) => {
-    if (this.props.notifySecretary !== prevProps.notifySecretary ||
-    this.props.fleetSecretary !== prevProps.fleetSecretary) {
-      const { notifySecretary, fleetSecretary } = this.props
-
-      updateNotifyConfig(notifySecretary || fleetSecretary)
+const SecretaryArea = connect(state => ({
+  notifySecretary: notifySecretaryIdSelector(state),
+  fleetSecretary: secretaryShipIdSelector(state),
+  ships: shipDataSelector(state),
+  enableHourlyVoice: enableHoulyVoiceSelector(state),
+  remodelChains: adjustedRemodelChainsSelector(state),
+}))(
+  class SecretaryArea extends PureComponent {
+    static propTypes = {
+      notifySecretary: PropTypes.number.isRequired,
+      fleetSecretary: PropTypes.number.isRequired,
+      ships: PropTypes.shape({
+        api_id: PropTypes.number,
+        api_name: PropTypes.string,
+        api_sortno: PropTypes.number,
+      }).isRequired,
+      enableHourlyVoice: PropTypes.bool.isRequired,
+      remodelChains: PropTypes.objectOf(PropTypes.array).isRequired,
     }
-  }
 
-  handleAudition = type => () => {
-    notify(null, { type })
-  }
+    componentDidUpdate = prevProps => {
+      if (
+        this.props.notifySecretary !== prevProps.notifySecretary ||
+        this.props.fleetSecretary !== prevProps.fleetSecretary
+      ) {
+        const { notifySecretary, fleetSecretary } = this.props
 
-  handleSetHourlyVoice = () => {
-    config.set('plugin.secretary.hourly_voice_enable', !this.props.enableHourlyVoice)
-  }
+        updateNotifyConfig(notifySecretary || fleetSecretary)
+      }
+    }
 
-  handleHourlyVoiceClick = () => {
-    hourlyNotify()
-  }
+    handleAudition = type => () => {
+      notify(null, { type })
+    }
 
-  handleSelect = (id) => {
-    config.set('plugin.secretary.ship', id)
-  }
+    handleSetHourlyVoice = () => {
+      config.set('plugin.secretary.hourly_voice_enable', !this.props.enableHourlyVoice)
+    }
 
-  handleAltSelect = id => () => this.handleSelect(id)
+    handleHourlyVoiceClick = () => {
+      hourlyNotify()
+    }
 
-  render() {
-    const {
-      ships, fleetSecretary, notifySecretary, enableHourlyVoice, remodelChains,
-    } = this.props
-    const ship = get(ships, notifySecretary || fleetSecretary, {})
-    const chain = get(remodelChains, notifySecretary || fleetSecretary)
-    const hasHourlyVoice = get(ship, ['api_voicef']) > 1
-    return (
-      <div id="secretary" className="secretary">
-        <link rel="stylesheet" href={join(relative(ROOT, __dirname), 'assets', 'secretary.css')} />
-        <div>
+    handleSelect = id => {
+      config.set('plugin.secretary.ship', id)
+    }
+
+    handleAltSelect = id => () => this.handleSelect(id)
+
+    render() {
+      const {
+        ships,
+        fleetSecretary,
+        notifySecretary,
+        enableHourlyVoice,
+        remodelChains,
+      } = this.props
+      const ship = get(ships, notifySecretary || fleetSecretary, {})
+      const chain = get(remodelChains, notifySecretary || fleetSecretary)
+      const hasHourlyVoice = get(ship, ['api_voicef']) > 1
+      return (
+        <div id="secretary" className="secretary">
+          <link
+            rel="stylesheet"
+            href={join(relative(ROOT, __dirname), 'assets', 'secretary.css')}
+          />
           <div>
-            <div className="title">
-              <ShipDropdown onSelect={this.handleSelect} />
-              <div className="ship-name">
-                { !notifySecretary && <span style={{ marginRight: '1ex' }}>{__('Current secretary')}</span>}
-                <span>{__r(ship.api_name || '')}</span>
-                {
-                  hasHourlyVoice &&
-                  <Label>{__('Hourly Voice')}</Label>
-                }
+            <div>
+              <div className="title">
+                <ShipDropdown onSelect={this.handleSelect} />
+                <div className="ship-name">
+                  {!notifySecretary && (
+                    <span style={{ marginRight: '1ex' }}>{__('Current secretary')}</span>
+                  )}
+                  <span>{__r(ship.api_name || '')}</span>
+                  {hasHourlyVoice && <Label>{__('Hourly Voice')}</Label>}
+                </div>
+              </div>
+              <div className="alt-select">
+                {_(chain)
+                  .map(shipId => (
+                    <div
+                      key={shipId}
+                      tabIndex="0"
+                      role="button"
+                      className={cls('select-item', { selected: shipId === ship.api_id })}
+                      onClick={this.handleAltSelect(shipId)}
+                    >
+                      {__r(get(ships, [shipId, 'api_name'], ''))}
+                    </div>
+                  ))
+                  .value()}
               </div>
             </div>
-            <div className="alt-select">
-              {
-                _(chain)
-                .map(shipId => (
-                  <div
-                    key={shipId}
-                    tabIndex="0"
-                    role="button"
-                    className={cls('select-item', { selected: shipId === ship.api_id })}
-                    onClick={this.handleAltSelect(shipId)}
-                  >
-                    {__r(get(ships, [shipId, 'api_name'], ''))}
-                  </div>
-                ))
-                .value()
-              }
-            </div>
-          </div>
-          <div>
             <div>
-              <Checkbox checked={this.props.enableHourlyVoice} onChange={this.handleSetHourlyVoice}>
-                {__("Play secretary's hourly voice when volume off")}
-              </Checkbox>
+              <div>
+                <Checkbox
+                  checked={this.props.enableHourlyVoice}
+                  onChange={this.handleSetHourlyVoice}
+                >
+                  {__("Play secretary's hourly voice when volume off")}
+                </Checkbox>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="divider">
-          <h5>{__('Test')}</h5>
-          <hr />
-        </div>
-        <div>
+          <div className="divider">
+            <h5>{__('Test')}</h5>
+            <hr />
+          </div>
           <div>
             <div>
-              <ButtonGroup id="voice-test">
+              <div>
+                <ButtonGroup id="voice-test">
+                  <Button bsStyle="success" onClick={this.handleAudition('construction')}>
+                    {__('Construction')}
+                  </Button>
+                  <Button bsStyle="success" onClick={this.handleAudition('repair')}>
+                    {__('Docking')}
+                  </Button>
+                  <Button bsStyle="success" onClick={this.handleAudition('expedition')}>
+                    {__('Expedition')}
+                  </Button>
+                  <Button bsStyle="success" onClick={this.handleAudition('morale')}>
+                    {__('Morale')}
+                  </Button>
+                </ButtonGroup>
+              </div>
+              <div xs={4}>
                 <Button
-                  bsStyle="success"
-                  onClick={this.handleAudition('construction')}
-                >{__('Construction')}
+                  style={{ width: '100%' }}
+                  bsStyle={hasHourlyVoice && enableHourlyVoice ? 'success' : 'info'}
+                  disabled={!hasHourlyVoice || !enableHourlyVoice}
+                  onClick={this.handleHourlyVoiceClick}
+                >
+                  {__('Hourly Voice')}
                 </Button>
-                <Button
-                  bsStyle="success"
-                  onClick={this.handleAudition('repair')}
-                >{__('Docking')}
-                </Button>
-                <Button
-                  bsStyle="success"
-                  onClick={this.handleAudition('expedition')}
-                >{__('Expedition')}
-                </Button>
-                <Button
-                  bsStyle="success"
-                  onClick={this.handleAudition('morale')}
-                >{__('Morale')}
-                </Button>
-              </ButtonGroup>
-            </div>
-            <div xs={4}>
-              <Button
-                style={{ width: '100%' }}
-                bsStyle={hasHourlyVoice && enableHourlyVoice ? 'success' : 'info'}
-                disabled={!hasHourlyVoice || !enableHourlyVoice}
-                onClick={this.handleHourlyVoiceClick}
-              >
-                {__('Hourly Voice')}
-              </Button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    )
-  }
-})
+      )
+    }
+  },
+)
 
 export const pluginWillUnload = () => {
   _.each(CONFIG, (id, key) => {
@@ -302,12 +343,11 @@ export const pluginDidLoad = () => {
   nextHour.setMinutes(0)
   nextHour.setSeconds(0)
   nextHour.setMilliseconds(0)
-  scheduler.schedule(hourlyNotify,
-    {
-      time: nextHour.getTime(),
-      interval: 1000 * 60 * 60,
-      allowImmediate: true,
-    })
+  scheduler.schedule(hourlyNotify, {
+    time: nextHour.getTime(),
+    interval: 1000 * 60 * 60,
+    allowImmediate: true,
+  })
   const shipId = config.get('plugin.secretary.ship', 0)
   updateNotifyConfig(shipId)
 }
