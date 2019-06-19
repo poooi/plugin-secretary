@@ -259,6 +259,8 @@ const Menu = compose(
 )}
               />
             ))}
+            <Tabs.Expander />
+            <Button onClick={this.handleConfirmCustom} minimal className={cls(Classes.POPOVER_DISMISS, Classes.TAB)}>{t('Current secretary')}</Button>
           </Tabs>
         </Wrapper>
       )
