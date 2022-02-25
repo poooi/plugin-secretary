@@ -135,7 +135,7 @@ const Menu = compose(
 
     componentDidUpdate = prevProps => {
       if (size(this.props.ships) !== size(prevProps.ships)) {
-        this.fuse.list = values(this.props.ships)
+        this.fuse.setCollection(values(this.props.ships))
         this.forceUpdate()
       }
     }
@@ -173,9 +173,8 @@ const Menu = compose(
       const { query } = this.state
       const { ships, uniqueMap, remodelChains, t } = this.props
 
-      const filtered = _(this.fuse.search(query))
-        .map(Number)
-        .value()
+      const filtered = _.map(this.fuse.search(query), ({ item }) => item.api_id)
+
       return (
         <Wrapper>
           <InputGroup
