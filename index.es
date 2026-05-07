@@ -1,9 +1,8 @@
 import { relative, join } from 'path-extra'
 import _, { get, sample } from 'lodash'
-import React, { PureComponent } from 'react'
-import PropTypes from 'prop-types'
-import { connect } from 'react-redux'
-import { Button, ButtonGroup, Label, Checkbox } from 'react-bootstrap'
+import React, { useEffect, useCallback, memo } from 'react'
+import { useSelector } from 'react-redux'
+import { Button, ButtonGroup, Tag, Checkbox, Intent } from '@blueprintjs/core'
 import cls from 'classnames'
 
 import ShipDropdown from './ship-dropdown'
@@ -184,151 +183,120 @@ const updateNotifyConfig = _shipId => {
   })
 }
 
-const SecretaryArea = connect(state => ({
-  notifySecretary: notifySecretaryIdSelector(state),
-  fleetSecretary: secretaryShipIdSelector(state),
-  ships: shipDataSelector(state),
-  enableHourlyVoice: enableHoulyVoiceSelector(state),
-  remodelChains: adjustedRemodelChainsSelector(state),
-}))(
-  class SecretaryArea extends PureComponent {
-    static propTypes = {
-      notifySecretary: PropTypes.number.isRequired,
-      fleetSecretary: PropTypes.number.isRequired,
-      ships: PropTypes.shape({
-        api_id: PropTypes.number,
-        api_name: PropTypes.string,
-        api_sortno: PropTypes.number,
-      }).isRequired,
-      enableHourlyVoice: PropTypes.bool.isRequired,
-      remodelChains: PropTypes.objectOf(PropTypes.array).isRequired,
-    }
+const SecretaryArea = memo(() => {
+  const notifySecretary = useSelector(notifySecretaryIdSelector)
+  const fleetSecretary = useSelector(secretaryShipIdSelector)
+  const ships = useSelector(shipDataSelector)
+  const enableHourlyVoice = useSelector(enableHoulyVoiceSelector)
+  const remodelChains = useSelector(adjustedRemodelChainsSelector)
 
-    componentDidUpdate = prevProps => {
-      if (
-        this.props.notifySecretary !== prevProps.notifySecretary ||
-        this.props.fleetSecretary !== prevProps.fleetSecretary
-      ) {
-        const { notifySecretary, fleetSecretary } = this.props
+  useEffect(() => {
+    updateNotifyConfig(notifySecretary || fleetSecretary)
+  }, [notifySecretary, fleetSecretary])
 
-        updateNotifyConfig(notifySecretary || fleetSecretary)
-      }
-    }
-
-    handleAudition = type => () => {
+  const handleAudition = useCallback(
+    type => () => {
       notify(null, { type })
-    }
+    },
+    [],
+  )
 
-    handleSetHourlyVoice = () => {
-      config.set('plugin.secretary.hourly_voice_enable', !this.props.enableHourlyVoice)
-    }
+  const handleSetHourlyVoice = useCallback(() => {
+    config.set('plugin.secretary.hourly_voice_enable', !enableHourlyVoice)
+  }, [enableHourlyVoice])
 
-    handleHourlyVoiceClick = () => {
-      hourlyNotify()
-    }
+  const handleHourlyVoiceClick = useCallback(() => {
+    hourlyNotify()
+  }, [])
 
-    handleSelect = id => {
-      config.set('plugin.secretary.ship', id)
-    }
+  const handleSelect = useCallback(id => {
+    config.set('plugin.secretary.ship', id)
+  }, [])
 
-    handleAltSelect = id => () => this.handleSelect(id)
+  const ship = get(ships, notifySecretary || fleetSecretary, {})
+  const chain = get(remodelChains, notifySecretary || fleetSecretary)
+  const hasHourlyVoice = get(ship, ['api_voicef']) > 1
 
-    render() {
-      const {
-        ships,
-        fleetSecretary,
-        notifySecretary,
-        enableHourlyVoice,
-        remodelChains,
-      } = this.props
-      const ship = get(ships, notifySecretary || fleetSecretary, {})
-      const chain = get(remodelChains, notifySecretary || fleetSecretary)
-      const hasHourlyVoice = get(ship, ['api_voicef']) > 1
-      return (
-        <div id="secretary" className="secretary">
-          <link
-            rel="stylesheet"
-            href={join(relative(ROOT, __dirname), 'assets', 'secretary.css')}
-          />
-          <div>
-            <div>
-              <div className="title">
-                <ShipDropdown onSelect={this.handleSelect} />
-                <div className="ship-name">
-                  {!notifySecretary && (
-                    <span style={{ marginRight: '1ex' }}>{__('Current secretary')}</span>
-                  )}
-                  <span>{__r(ship.api_name || '')}</span>
-                  {hasHourlyVoice && <Label>{__('Hourly Voice')}</Label>}
+  return (
+    <div id="secretary" className="secretary">
+      <link
+        rel="stylesheet"
+        href={join(relative(ROOT, __dirname), 'assets', 'secretary.css')}
+      />
+      <div>
+        <div>
+          <div className="title">
+            <ShipDropdown onSelect={handleSelect} />
+            <div className="ship-name">
+              {!notifySecretary && (
+                <span style={{ marginRight: '1ex' }}>{__('Current secretary')}</span>
+              )}
+              <span>{__r(ship.api_name || '')}</span>
+              {hasHourlyVoice && <Tag intent={Intent.PRIMARY}>{__('Hourly Voice')}</Tag>}
+            </div>
+          </div>
+          <div className="alt-select">
+            {_(chain)
+              .map(shipId => (
+                <div
+                  key={shipId}
+                  tabIndex="0"
+                  role="button"
+                  className={cls('select-item', { selected: shipId === ship.api_id })}
+                  onClick={() => handleSelect(shipId)}
+                >
+                  {__r(get(ships, [shipId, 'api_name'], ''))}
                 </div>
-              </div>
-              <div className="alt-select">
-                {_(chain)
-                  .map(shipId => (
-                    <div
-                      key={shipId}
-                      tabIndex="0"
-                      role="button"
-                      className={cls('select-item', { selected: shipId === ship.api_id })}
-                      onClick={this.handleAltSelect(shipId)}
-                    >
-                      {__r(get(ships, [shipId, 'api_name'], ''))}
-                    </div>
-                  ))
-                  .value()}
-              </div>
-            </div>
-            <div>
-              <div>
-                <Checkbox
-                  checked={this.props.enableHourlyVoice}
-                  onChange={this.handleSetHourlyVoice}
-                >
-                  {__("Play secretary's hourly voice when volume off")}
-                </Checkbox>
-              </div>
-            </div>
-          </div>
-
-          <div className="divider">
-            <h5>{__('Test')}</h5>
-            <hr />
-          </div>
-          <div>
-            <div>
-              <div>
-                <ButtonGroup id="voice-test">
-                  <Button bsStyle="success" onClick={this.handleAudition('construction')}>
-                    {__('Construction')}
-                  </Button>
-                  <Button bsStyle="success" onClick={this.handleAudition('repair')}>
-                    {__('Docking')}
-                  </Button>
-                  <Button bsStyle="success" onClick={this.handleAudition('expedition')}>
-                    {__('Expedition')}
-                  </Button>
-                  <Button bsStyle="success" onClick={this.handleAudition('morale')}>
-                    {__('Morale')}
-                  </Button>
-                </ButtonGroup>
-              </div>
-              <div xs={4}>
-                <Button
-                  style={{ width: '100%' }}
-                  bsStyle={hasHourlyVoice && enableHourlyVoice ? 'success' : 'info'}
-                  disabled={!hasHourlyVoice || !enableHourlyVoice}
-                  onClick={this.handleHourlyVoiceClick}
-                >
-                  {__('Hourly Voice')}
-                </Button>
-              </div>
-            </div>
+              ))
+              .value()}
           </div>
         </div>
-      )
-    }
-  },
-)
+        <div>
+          <Checkbox
+            checked={enableHourlyVoice}
+            onChange={handleSetHourlyVoice}
+            label={__("Play secretary's hourly voice when volume off")}
+          />
+        </div>
+      </div>
+
+      <div className="divider">
+        <h5>{__('Test')}</h5>
+        <hr />
+      </div>
+      <div>
+        <div>
+          <div>
+            <ButtonGroup id="voice-test">
+              <Button intent={Intent.SUCCESS} onClick={handleAudition('construction')}>
+                {__('Construction')}
+              </Button>
+              <Button intent={Intent.SUCCESS} onClick={handleAudition('repair')}>
+                {__('Docking')}
+              </Button>
+              <Button intent={Intent.SUCCESS} onClick={handleAudition('expedition')}>
+                {__('Expedition')}
+              </Button>
+              <Button intent={Intent.SUCCESS} onClick={handleAudition('morale')}>
+                {__('Morale')}
+              </Button>
+            </ButtonGroup>
+          </div>
+          <div>
+            <Button
+              style={{ width: '100%' }}
+              intent={hasHourlyVoice && enableHourlyVoice ? Intent.SUCCESS : Intent.PRIMARY}
+              disabled={!hasHourlyVoice || !enableHourlyVoice}
+              onClick={handleHourlyVoiceClick}
+            >
+              {__('Hourly Voice')}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+})
 
 export const pluginWillUnload = () => {
   _.each(CONFIG, (id, key) => {

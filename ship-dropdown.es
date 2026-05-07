@@ -1,15 +1,14 @@
-import React, { Component } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import propTypes from 'prop-types'
 import { Button, Classes, InputGroup, Intent, Tab, Tabs, Tag } from '@blueprintjs/core'
-import { connect } from 'react-redux'
+import { useSelector } from 'react-redux'
 import cls from 'classnames'
-import _, { values, padStart, map, size } from 'lodash'
+import _, { values, padStart, map } from 'lodash'
 import Fuse from 'fuse.js'
 import FA from 'react-fontawesome'
 import { Popover } from 'views/components/etc/overlay'
 import styled from 'styled-components'
-import { withTranslation } from 'react-i18next'
-import { compose } from 'redux'
+import { useTranslation } from 'react-i18next'
 
 import { shipDataSelector, shipUniqueMapSelector, adjustedRemodelChainsSelector } from './selectors'
 
@@ -71,7 +70,7 @@ const searchOptions = [
 ]
 
 const Wrapper = styled.div`
-  .bp3-tab-panel {
+  .bp5-tab-panel {
     margin-top: 0;
   }
 `
@@ -101,155 +100,134 @@ const ShipName = styled.span`
   flex: 1;
 `
 
-const Menu = compose(
-  withTranslation('poi-plugin-secretary'),
-  connect(state => ({
-    ships: shipDataSelector(state),
-    uniqueMap: shipUniqueMapSelector(state),
-    remodelChains: adjustedRemodelChainsSelector(state),
-  })),
-)(
-  class Menu extends Component {
-    static propTypes = {
-      ships: propTypes.objectOf(propTypes.object).isRequired,
-      uniqueMap: propTypes.objectOf(propTypes.number).isRequired,
-      remodelChains: propTypes.objectOf(propTypes.array).isRequired,
-      onSelect: propTypes.func.isRequired,
-    }
+const FUSE_OPTIONS = {
+  keys: ['api_name', 'api_yomi', 'romaji'],
+  id: 'api_id',
+  shouldSort: true,
+}
 
-    constructor(props) {
-      super(props)
+const Menu = ({ onSelect }) => {
+  const { t } = useTranslation('poi-plugin-secretary')
+  const ships = useSelector(shipDataSelector)
+  const uniqueMap = useSelector(shipUniqueMapSelector)
+  const remodelChains = useSelector(adjustedRemodelChainsSelector)
 
-      const options = {
-        keys: ['api_name', 'api_yomi', 'romaji'],
-        id: 'api_id',
-        shouldSort: true,
-      }
-      this.fuse = new Fuse(values(props.ships), options)
-    }
+  const [query, setQuery] = useState('')
 
-    state = {
-      query: '',
-      type: 'all',
-    }
+  const fuseRef = useRef(null)
+  if (fuseRef.current === null) {
+    fuseRef.current = new Fuse(values(ships), FUSE_OPTIONS)
+  }
 
-    componentDidUpdate = prevProps => {
-      if (size(this.props.ships) !== size(prevProps.ships)) {
-        this.fuse.setCollection(values(this.props.ships))
-        this.forceUpdate()
-      }
-    }
+  useEffect(() => {
+    fuseRef.current.setCollection(values(ships))
+  }, [ships])
 
-    handleQueryChange = e => {
-      this.setState({
-        query: e.target.value,
-      })
-    }
+  const handleQueryChange = useCallback(e => {
+    setQuery(e.target.value)
+  }, [])
 
-    handleTypeChange = value => async () => {
-      await this.setState({
-        type: value,
-      })
-      if (this.selection) {
-        this.selection.scrollTop = 0
-      }
-    }
+  const handleClear = useCallback(() => {
+    setQuery('')
+  }, [])
 
-    handleClear = () => {
-      this.setState({
-        query: '',
-      })
-    }
+  const handleSelect = useCallback(
+    id => () => {
+      onSelect(id)
+    },
+    [onSelect],
+  )
 
-    handleSelect = id => async () => {
-      this.props.onSelect(id)
-    }
+  const handleConfirmCustom = useCallback(() => {
+    onSelect(0)
+  }, [onSelect])
 
-    handleConfirmCustom = () => {
-      this.props.onSelect(0)
-    }
+  const filtered = _.map(fuseRef.current.search(query), ({ item }) => item.api_id)
 
-    render() {
-      const { query } = this.state
-      const { ships, uniqueMap, remodelChains, t } = this.props
+  return (
+    <Wrapper>
+      <InputGroup
+        value={query}
+        placeholder={t('Search')}
+        onChange={handleQueryChange}
+        rightElement={
+          <Button minimal onClick={handleClear} intent={Intent.WARNING}>
+            <FA name="times" />
+          </Button>
+        }
+      />
 
-      const filtered = _.map(this.fuse.search(query), ({ item }) => item.api_id)
-
-      return (
-        <Wrapper>
-          <InputGroup
-            value={query}
-            placeholder={t('Search')}
-            onChange={this.handleQueryChange}
-            rightElement={
-              <Button minimal onClick={this.handleClear} intent={Intent.WARNING}>
-                <FA name="times" />
-              </Button>
+      <Tabs vertical id="ship-selection" renderActiveTabPanelOnly>
+        {map(searchOptions, ({ name, value: type }) => (
+          <Tab
+            key={type}
+            id={type}
+            title={t(name)}
+            panel={
+              <ShipList className="ship-info-scrollable">
+                {_(ships)
+                  .filter(
+                    ship => !catMap[type] || (catMap[type] || []).includes(ship.api_stype),
+                  )
+                  .filter(ship => !query || (filtered || []).includes(ship.api_id))
+                  .sortBy([
+                    ship => (filtered || []).indexOf(ship.api_id),
+                    ship => ship.api_stype,
+                    ship => ship.api_ctype,
+                    ship => uniqueMap[ship.api_id],
+                    ship => (remodelChains[ship.api_id] || []).indexOf(ship.api_id),
+                  ])
+                  .map(ship => (
+                    <ShipItem
+                      className={cls(Classes.POPOVER_DISMISS, Classes.MENU_ITEM)}
+                      key={ship.api_id}
+                      onClick={handleSelect(ship.api_id)}
+                    >
+                      <ShipId>{padStart(ship.api_sortno, 4, '0')}</ShipId>
+                      <ShipName>{window.i18n.resources.__(ship.api_name || '')}</ShipName>
+                      {ship.api_voicef > 1 && (
+                        <Tag intent={Intent.PRIMARY}>
+                          <FA name="clock-o" />
+                        </Tag>
+                      )}
+                    </ShipItem>
+                  ))
+                  .value()}
+              </ShipList>
             }
           />
+        ))}
+        <Tabs.Expander />
+        <Button
+          onClick={handleConfirmCustom}
+          minimal
+          className={cls(Classes.POPOVER_DISMISS, Classes.TAB)}
+        >
+          {t('Current secretary')}
+        </Button>
+      </Tabs>
+    </Wrapper>
+  )
+}
 
-          <Tabs vertical id="ship-selection" renderActiveTabPanelOnly>
-            {map(searchOptions, ({ name, value: type }) => (
-              <Tab
-                key={type}
-                id={type}
-                title={t(name)}
-                panel={
-                  <ShipList className="ship-info-scrollable">
-                    {_(ships)
-                      .filter(
-                        ship => !catMap[type] || (catMap[type] || []).includes(ship.api_stype),
-                      )
-                      .filter(ship => !query || (filtered || []).includes(ship.api_id))
-                      .sortBy([
-                        ship => (filtered || []).indexOf(ship.api_id),
-                        ship => ship.api_stype,
-                        ship => ship.api_ctype,
-                        ship => uniqueMap[ship.api_id],
-                        ship => (remodelChains[ship.api_id] || []).indexOf(ship.api_id),
-                      ])
-                      .map(ship => (
-                        <ShipItem
-                          className={cls(Classes.POPOVER_DISMISS, Classes.MENU_ITEM)}
-                          key={ship.api_id}
-                          onClick={this.handleSelect(ship.api_id)}
-                        >
-                          <ShipId>{padStart(ship.api_sortno, 4, '0')}</ShipId>
-                          <ShipName>{window.i18n.resources.__(ship.api_name || '')}</ShipName>
-                          {ship.api_voicef > 1 && (
-                            <Tag intent={Intent.PRIMARY}>
-                              <FA name="clock-o" />
-                            </Tag>
-                          )}
-                        </ShipItem>
-                      ))
-                      .value()}
-                  </ShipList>
-                }
-              />
-            ))}
-            <Tabs.Expander />
-            <Button
-              onClick={this.handleConfirmCustom}
-              minimal
-              className={cls(Classes.POPOVER_DISMISS, Classes.TAB)}
-            >
-              {t('Current secretary')}
-            </Button>
-          </Tabs>
-        </Wrapper>
-      )
-    }
-  },
-)
+Menu.propTypes = {
+  onSelect: propTypes.func.isRequired,
+}
 
-const ShipDropdown = ({ ...props }) => (
-  <Popover hasBackdrop>
+const ShipDropdown = ({ onSelect }) => (
+  <Popover
+    hasBackdrop
+    content={
+      <Menu onSelect={onSelect} />
+    }>
     <Button minimal>
       <FA name="list" />
     </Button>
-    <Menu {...props} />
   </Popover>
 )
+
+ShipDropdown.propTypes = {
+  onSelect: propTypes.func.isRequired,
+}
 
 export default ShipDropdown
