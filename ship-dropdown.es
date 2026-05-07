@@ -1,6 +1,15 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import propTypes from 'prop-types'
-import { Button, Classes, InputGroup, Intent, Tab, Tabs, Tag } from '@blueprintjs/core'
+import {
+  Button,
+  Classes,
+  InputGroup,
+  Intent,
+  Tab,
+  Tabs,
+  TabsExpander,
+  Tag,
+} from '@blueprintjs/core'
 import { useSelector } from 'react-redux'
 import cls from 'classnames'
 import _, { values, padStart, map } from 'lodash'
@@ -166,9 +175,7 @@ const Menu = ({ onSelect }) => {
             panel={
               <ShipList className="ship-info-scrollable">
                 {_(ships)
-                  .filter(
-                    ship => !catMap[type] || (catMap[type] || []).includes(ship.api_stype),
-                  )
+                  .filter(ship => !catMap[type] || (catMap[type] || []).includes(ship.api_stype))
                   .filter(ship => !query || (filtered || []).includes(ship.api_id))
                   .sortBy([
                     ship => (filtered || []).indexOf(ship.api_id),
@@ -197,7 +204,7 @@ const Menu = ({ onSelect }) => {
             }
           />
         ))}
-        <Tabs.Expander />
+        <TabsExpander />
         <Button
           onClick={handleConfirmCustom}
           minimal
@@ -215,11 +222,7 @@ Menu.propTypes = {
 }
 
 const ShipDropdown = ({ onSelect }) => (
-  <Popover
-    hasBackdrop
-    content={
-      <Menu onSelect={onSelect} />
-    }>
+  <Popover hasBackdrop content={<Menu onSelect={onSelect} />}>
     <Button minimal>
       <FA name="list" />
     </Button>
